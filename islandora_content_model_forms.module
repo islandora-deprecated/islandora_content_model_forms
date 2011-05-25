@@ -7,3 +7,116 @@
  *
  */
 
+/**
+ * Implementation of Hook Menu.
+ */
+function islandora_content_model_forms_menu() {
+  // List existing associations, include a form for adding more.
+  $items['admin/content/model/forms'] = array(
+    'title' => 'Form Associations.',
+    'description' => 'Lists Content Models and the forms they are association with.',
+    'page callback' => 'islandora_content_model_forms_list',
+    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'type' => MENU_NORMAL_ITEM,
+  );
+  // Remove existing associations, redirect back to list.
+  $items['admin/content/model/forms/remove/%'] = array(
+    'title' => 'Remove Form Association.',
+    'description' => 'Removes a associated form.',
+    'page callback' => 'islandora_content_model_forms_remove',
+    'page arguments' => array(5),
+    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements Hook Theme. Registers themes.
+ *
+ * @return array
+ */
+function islandora_content_model_forms_theme() {
+  return array(
+    'list' => array(
+      'arguments' => array('list' => NULL, 'form' => NULL),
+      'template' => 'List',
+    ),
+  );
+}
+
+/**
+ * Lists the existing forms.
+ */
+function islandora_content_model_forms_list() {
+  $path = drupal_get_path('module', 'islandora_content_model_forms');
+  drupal_add_css("$path/css/form.css");
+  $list = array(
+    array(0, 'coccc:cocccBasicModel', 'colorado'),
+    array(1, 'coccc:cocccBasicModel', 'colorado'),
+    array(2, 'coccc:cocccBasicModel', 'colorado'),
+  );
+  return theme('list', $list, drupal_get_form('islandora_content_model_forms_list_form'));
+}
+
+/**
+ *
+ * @param int $id 
+ */
+function islandora_content_model_forms_remove($id) {
+  drupal_set_message('Successfully removed association.');
+  drupal_goto('admin/content/model/forms');
+}
+
+/**
+ * 
+ * @param array $form_state 
+ */
+function islandora_content_model_forms_list_form(array &$form_state) {
+  $content_models = array('name' => 'name', 'name2' => 'name2');
+  $form_names = array('foo' => 'foo');
+  $form = array(
+    'fieldset' => array(
+      '#type' => 'fieldset',
+      '#title' => 'Add Association',
+      'content_model' => array(
+        '#type' => 'select',
+        '#title' => 'Content Model',
+        '#description' => 'adsfadsf',
+        '#options' => $content_models,
+        '#default_value' => isset($form_state['values']['content_model']) ? $form_state['values']['content_model'] : NULL,
+      ),
+      'form_name' => array(
+        '#type' => 'select',
+        '#title' => 'Form Name',
+        '#description' => 'adsfadsf',
+        '#options' => $form_names,
+        '#default_value' => isset($form_state['values']['form_name']) ? $form_state['values']['form_name'] : NULL,
+      ),
+      'dsid' => array(
+        '#type' => 'textfield',
+        '#description' => 'asdfadsfadsfa',
+        '#title' => 'Metadata Datastream ID',
+        '#required' => TRUE,
+        '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
+      ),
+      'submit' => array(
+        '#type' => 'submit',
+        '#value' => 'Add'
+      )
+    ),
+  );
+  return $form;
+}
+
+/**
+ *
+ * @param array $form_state 
+ */
+function islandora_content_model_forms_list_form_submit($form, array &$form_state) {
+  $object = new stdClass();
+  $object->content_model = $form_state['values']['content_model'];
+  $object->form_name = $form_state['values']['form_name'];
+  $object->dsid = $form_state['values']['dsid'];
+  return drupal_write_record('islandora_content_model_forms', $object);
+}

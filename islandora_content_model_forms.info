@@ -1,9 +1,5 @@
-<?php
-
-// $Id$
-
-/**
- * @file
- *
- */
-
+; $Id$
+name = Islandora Content Model Forms
+description = Defines associations between XML forms and the content models whose meta data the forms manipulate.
+package = Fedora Repository
+core = 6.x
