@@ -9,6 +9,8 @@
 
 /**
  * Implementation of Hook Menu.
+ * 
+ * @return array
  */
 function islandora_content_model_forms_menu() {
   // List existing associations, include a form for adding more.
@@ -51,30 +53,38 @@ function islandora_content_model_forms_theme() {
 function islandora_content_model_forms_list() {
   $path = drupal_get_path('module', 'islandora_content_model_forms');
   drupal_add_css("$path/css/form.css");
-  $list = array(
-    array(0, 'coccc:cocccBasicModel', 'colorado'),
-    array(1, 'coccc:cocccBasicModel', 'colorado'),
-    array(2, 'coccc:cocccBasicModel', 'colorado'),
-  );
+  $list = array();
+  $result = db_query('SELECT * FROM {islandora_content_model_forms}');
+  while ($data = db_fetch_object($result)) {
+    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid);
+  }
   return theme('list', $list, drupal_get_form('islandora_content_model_forms_list_form'));
 }
 
 /**
- *
+ * Remove the association identified by $id.
+ * 
  * @param int $id 
  */
 function islandora_content_model_forms_remove($id) {
+  db_query("DELETE FROM {islandora_content_model_forms} WHERE id = '%d'", (int) $id);
   drupal_set_message('Successfully removed association.');
   drupal_goto('admin/content/model/forms');
 }
 
 /**
+ * Render the form for adding new associations.
  * 
  * @param array $form_state 
+ * @return array
  */
 function islandora_content_model_forms_list_form(array &$form_state) {
-  $content_models = array('name' => 'name', 'name2' => 'name2');
-  $form_names = array('foo' => 'foo');
+  $content_models = islandora_content_model_forms_get_content_model_names();
+  $form_names = islandora_content_model_forms_get_form_names();
+  if (count($form_names) == 0 || count($content_models) == 0) {
+    drupal_set_message('Both forms and content models must be defined to add new associations.', 'error');
+    return;
+  }
   $form = array(
     'fieldset' => array(
       '#type' => 'fieldset',
@@ -110,7 +120,8 @@ function islandora_content_model_forms_list_form(array &$form_state) {
 }
 
 /**
- *
+ * Add a new association.
+ * 
  * @param array $form_state 
  */
 function islandora_content_model_forms_list_form_submit($form, array &$form_state) {
@@ -118,5 +129,77 @@ function islandora_content_model_forms_list_form_submit($form, array &$form_stat
   $object->content_model = $form_state['values']['content_model'];
   $object->form_name = $form_state['values']['form_name'];
   $object->dsid = $form_state['values']['dsid'];
-  return drupal_write_record('islandora_content_model_forms', $object);
+  if (drupal_write_record('islandora_content_model_forms', $object) !== FALSE) {
+    drupal_set_message('Successfully added association.');
+  }
+  else {
+    drupal_set_message('Failed to add association.', 'error');
+  }
+}
+
+/**
+ * Gets a map of form names suitable for use as select #options.
+ */
+function islandora_content_model_forms_get_content_model_names() {
+  $content_models = array();
+  $content = islandora_content_model_forms_query_content_models();
+  return islandora_content_model_forms_parse_query($content);
+}
+
+/**
+ * 
+ */
+function islandora_content_model_forms_query_content_models() {
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  $offset = 0;
+  $limit = 1000;
+  $query = 'select $object  $model from <#ri>
+  where (walk($model <fedora-model:hasModel><info:fedora/fedora-system:ContentModel-3.0>
+  and $model <fedora-model:hasModel> $object))
+  minus $object <mulgara:is><info:fedora/fedora-system:FedoraObject-3.0>
+  minus $object <mulgara:is><info:fedora/fedora-system:ContentModel-3.0>
+  minus $object <mulgara:is><info:fedora/fedora-system:ServiceDefinition-3.0>
+  minus $object <mulgara:is><info:fedora/fedora-system:ServiceDeployment-3.0>
+  order by $object';
+  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $url .= "?type=tuples&flush=TRUE&format=Sparql&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . htmlentities(urlencode($query));
+  $content = trim(do_curl($url));
+  return $content != '' ? $content : NULL;
+}
+
+/**
+ *
+ * @param string $content
+ * @return array
+ */
+function islandora_content_model_forms_parse_query($content) {
+  $content_models = array();
+  if ($content) {
+    $doc = new DOMDocument();
+    $doc->loadXML($content);
+    $path = new DOMXPath($doc);
+    $path->registerNamespace('sparql', 'http://www.w3.org/2001/sw/DataAccess/rf1/result');
+    $results = $path->query('//sparql:result');
+    if ($results->length > 0) {
+      $count = $results->length;
+      for ($i = 0; $i < $count; $i++) {
+        $result = $results->item($i);
+        $pid = substr($path->query('sparql:object/@uri', $result)->item(0)->value, 12); // 12 characteres in "info:fedora/"
+        $content_models[$pid] = $pid;
+      }
+    }
+  }
+  return $content_models;
+}
+
+/**
+ * Gets a map of form names suitable for use as select #options.
+ */
+function islandora_content_model_forms_get_form_names() {
+  $form_names = array();
+  $result = db_query('SELECT name FROM {xml_forms}');
+  while ($data = db_fetch_object($result)) {
+    $form_names[$data->name] = $data->name;
+  }
+  return $form_names;
 }
