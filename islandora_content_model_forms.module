@@ -21,6 +21,13 @@ function islandora_content_model_forms_menu() {
     'access arguments' => array('menu_item_access'), // Use something fedora specific.
     'type' => MENU_NORMAL_ITEM,
   );
+  $items['admin/content/model/forms/autocomplete'] = array(
+    'title' => 'Auto Complete List of Models.',
+    'description' => 'Lists Content Models.',
+    'page callback' => 'islandora_content_model_forms_autocomplete',
+    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'type' => MENU_CALLBACK,
+  );
   // Remove existing associations, redirect back to list.
   $items['admin/content/model/forms/remove/%'] = array(
     'title' => 'Remove Form Association.',
@@ -90,22 +97,23 @@ function islandora_content_model_forms_list_form(array &$form_state) {
       '#type' => 'fieldset',
       '#title' => 'Add Association',
       'content_model' => array(
-        '#type' => 'select',
+        '#type' => 'textfield',
         '#title' => 'Content Model',
-        '#description' => 'adsfadsf',
+        '#autocomplete_path' => 'admin/content/model/forms/autocomplete',
+        '#description' => 'The content model to associate with a form. If the content model has no decendants it will not show up in autocomplete.',
         '#options' => $content_models,
         '#default_value' => isset($form_state['values']['content_model']) ? $form_state['values']['content_model'] : NULL,
       ),
       'form_name' => array(
         '#type' => 'select',
         '#title' => 'Form Name',
-        '#description' => 'adsfadsf',
+        '#description' => 'The name of the form to associate with the content model.',
         '#options' => $form_names,
         '#default_value' => isset($form_state['values']['form_name']) ? $form_state['values']['form_name'] : NULL,
       ),
       'dsid' => array(
         '#type' => 'textfield',
-        '#description' => 'asdfadsfadsfa',
+        '#description' => 'The datastream ID of where the objects metadata is stored.',
         '#title' => 'Metadata Datastream ID',
         '#required' => TRUE,
         '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
@@ -202,4 +210,30 @@ function islandora_content_model_forms_get_form_names() {
     $form_names[$data->name] = $data->name;
   }
   return $form_names;
+}
+
+/**
+ * Php you suck so badly, the array_filter function should just take extra parameters like array_walk...
+ */
+class AutoCompleteFilter {
+
+  protected $string;
+
+  function __construct($string) {
+    $this->string = strtolower($string);
+  }
+
+  function __invoke($content_model) {
+    return (preg_match("/^{$this->string}/i", $content_model) !== 0) ? TRUE : FALSE;
+  }
+
+}
+
+/**
+ * Autocomplete the content model name..
+ */
+function islandora_content_model_forms_autocomplete($string) {
+  $content_models = islandora_content_model_forms_get_content_model_names();
+  $output = array_filter($content_models, new AutoCompleteFilter($string));
+  return drupal_json($output);
 }
