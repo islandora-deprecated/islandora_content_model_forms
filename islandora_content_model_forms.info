@@ -1,5 +1,7 @@
 ; $Id$
 name = Islandora Content Model Forms
 description = Defines associations between XML forms and the content models whose meta data the forms manipulate.
+dependencies[] = xml_form_builder
 package = Fedora Repository
+version = 6.x-$Format:%h$-dev
 core = 6.x
