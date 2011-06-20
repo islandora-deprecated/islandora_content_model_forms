@@ -37,6 +37,13 @@ function islandora_content_model_forms_menu() {
     'access arguments' => array('menu_item_access'), // Use something fedora specific.
     'type' => MENU_CALLBACK,
   );
+  // Get the list of forms for the given form
+  $items['admin/content/model/%/forms'] = array(
+    'page callback' => 'islandora_content_model_get_form_names_ahah',
+    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -236,4 +243,28 @@ function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $output = array_filter($content_models, new AutoCompleteFilter($string));
   return drupal_json($output);
+}
+
+/**
+ *
+ * @param string $content_model 
+ */
+function islandora_content_model_get_form_names($content_model) {
+  $list = array();
+  $result = db_query('SELECT * FROM {islandora_content_model_forms}');
+  while ($data = db_fetch_object($result)) {
+    if ($data->content_model == $content_model) {
+      $list[$data->form_name] = "{$data->form_name}: ({$data->dsid})";
+    }
+  }
+  return $list;
+}
+
+/**
+ *
+ * @param string $content_model 
+ */
+function islandora_content_model_get_form_names_ahah($content_model) {
+  $list = islandora_content_model_get_form_names($content_model);
+  return drupal_json($list);
 }
