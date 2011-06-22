@@ -268,3 +268,13 @@ function islandora_content_model_get_form_names_ahah($content_model) {
   $list = islandora_content_model_get_form_names($content_model);
   return drupal_json($list);
 }
+
+function islandora_content_model_get_dsid($content_model_pid, $form_name) {
+  $result = db_query("SELECT dsid FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
+  while ($data = db_fetch_object($result)) {
+    if (isset($data->dsid)) {
+      return $data->dsid;
+    }
+  }
+  return NULL;
+}
