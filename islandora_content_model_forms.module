@@ -6,6 +6,7 @@
  * @file
  *
  */
+define("PERM_ADMIN_FORM_ASSOCIATION", 'Admin Form Associations');
 
 /**
  * Implementation of Hook Menu.
@@ -18,14 +19,14 @@ function islandora_content_model_forms_menu() {
     'title' => 'Form Associations.',
     'description' => 'Lists Content Models and the forms they are association with.',
     'page callback' => 'islandora_content_model_forms_list',
-    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/content/model/forms/autocomplete'] = array(
     'title' => 'Auto Complete List of Models.',
     'description' => 'Lists Content Models.',
     'page callback' => 'islandora_content_model_forms_autocomplete',
-    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'type' => MENU_CALLBACK,
   );
   // Remove existing associations, redirect back to list.
@@ -34,17 +35,28 @@ function islandora_content_model_forms_menu() {
     'description' => 'Removes a associated form.',
     'page callback' => 'islandora_content_model_forms_remove',
     'page arguments' => array(5),
-    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'type' => MENU_CALLBACK,
   );
   // Get the list of forms for the given form
   $items['admin/content/model/%/forms'] = array(
     'page callback' => 'islandora_content_model_get_form_names_ahah',
-    'access arguments' => array('menu_item_access'), // Use something fedora specific.
+    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'page arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
   return $items;
+}
+
+/**
+ * Implements hook_perm. Register permissions.
+ * 
+ * @return array
+ */
+function islandora_content_model_forms_perm() {
+  return array(
+    PERM_ADMIN_FORM_ASSOCIATION,
+  );
 }
 
 /**
