@@ -15,8 +15,6 @@ module_load_include('inc', 'xml_form_api', 'XMLForm');
  */
 class EditObjectMetadataForm {
 
-  protected $fedoraItem;
-
   /**
    * Get Content Models for the form.
    * 
@@ -166,7 +164,6 @@ class EditObjectMetadataForm {
     $xml_form = new XMLForm($form_state);
     $doc = $xml_form->submit($form, $form_state);
     $document = $doc->document;
-    $this->fedoraItem = new Fedora_Item($pid);
     $this->modifyDatastream($document, $pid, $dsid, "$dsid Record", 'text/xml');
     // @todo: Perform Transform
     /**
@@ -177,8 +174,8 @@ class EditObjectMetadataForm {
      * $dublin_core->formatOutput = TRUE;
      * $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
      */
-    $this->formState['storage'] = NULL;
-    $this->formState['redirect'] = $base_url . '/fedora/repository/' . $pid;
+    $form_state['storage'] = NULL;
+    $form_state['redirect'] = $base_url . '/fedora/repository/' . $pid;
   }
 
   /**
@@ -190,8 +187,9 @@ class EditObjectMetadataForm {
    * @return
    *  TRUE if the data stream specified by $disd is managed, FALSE otherwise.
    */
-  private function isDatastreamManaged($dsid) {
-    $datastream = $this->fedoraItem->get_datastream($dsid);
+  private function isDatastreamManaged($pid, $dsid) {
+    $fedora_item = new Fedora_Item($pid);
+    $datastream = $fedora_item->get_datastream($dsid);
     return $datastream->controlGroup == 'M';
   }
 
@@ -215,7 +213,8 @@ class EditObjectMetadataForm {
     $temp_file_path = file_create_filename("datastream.xml", $temp_file_dir);
     if ($dom->save($temp_file_path)) {
       $temp_file_url = file_create_url($temp_file_path);
-      if ($this->fedoraItem->modify_datastream_by_reference($temp_file_url, $dsid, $label, $mime_type) !== NULL) {
+      $fedora_item = new Fedora_Item($pid);
+      if ($fedora_item->modify_datastream_by_reference($temp_file_url, $dsid, $label, $mime_type) !== NULL) {
         drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $pid, '%dsid' => $dsid)));
       }
     }
@@ -236,7 +235,8 @@ class EditObjectMetadataForm {
    *   Data stream mime_type.
    */
   private function modifyInlineDatastream(DOMDocument $dom, $pid, $dsid, $label, $mime_type) {
-    if ($this->fedoraItem->modify_datastream_by_value($dom->saveXML(), $dsid, $label, $mime_type) !== NULL) {
+    $fedora_item = new Fedora_Item($pid);
+    if ($fedora_item->modify_datastream_by_value($dom->saveXML(), $dsid, $label, $mime_type) !== NULL) {
       drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $pid, '%dsid' => $dsid)));
     }
   }
@@ -257,7 +257,7 @@ class EditObjectMetadataForm {
    *   Data stream mime_type.
    */
   private function modifyDatastream($dom, $pid, $dsid, $label, $mime_type) {
-    if ($this->isDatastreamManaged($dsid)) {
+    if ($this->isDatastreamManaged($pid, $dsid)) {
       $this->modifyManagedDatastream($dom, $pid, $dsid, $label, $mime_type);
     }
     else {
