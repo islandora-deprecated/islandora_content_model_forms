@@ -155,7 +155,7 @@ class IngestObjectMetadataForm {
       return $this->createPageTwo($collection_pid, $collection_label, $form_state);
     }
     else {
-      throw new Exception('Couldn\'t Create Page Two of the Ingest Form.');
+      throw new Exception('Couldn\'t Create the Ingest Form.');
     }
   }
 

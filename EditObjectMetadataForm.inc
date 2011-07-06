@@ -8,100 +8,177 @@
  */
 module_load_include('inc', 'fedora_repository', 'api/fedora_item');
 module_load_include('inc', 'fedora_repository', 'ContentModel');
+module_load_include('inc', 'xml_form_api', 'XMLForm');
 
 /**
  *
  */
 class EditObjectMetadataForm {
 
+  protected $fedoraItem;
+
   /**
-   * The pid of the object whose datastream will be modify.
-   *
-   * @var string
-   */
-  protected $pid;
-  /**
-   * The datatstrean ID for the datastream we will modify.
-   *
-   * @var string
-   */
-  protected $dsid;
-  /**
-   * The name of the form to create.
+   * Get Content Models for the form.
    * 
-   * @var string 
+   * @param string $collection_pid
+   * 
+   * @return array
    */
-  protected $formName;
-  /**
-   * The fedora object to edit.
-   *
-   * @var Fedora_Item
-   */
-  protected $fedoraObject;
+  public function getPotentialContentModels($collection_pid) {
+    if (($collection_policy = CollectionPolicy::loadFromCollection($collection_pid)) === FALSE) {
+      drupal_set_message(t('Unable to load collection policy \'' . $collection_pid . '\'.'));
+      return FALSE;
+    }
+    if (!($content_models = $collection_policy->getContentModels())) {
+      drupal_set_message(t('No content models associated with this collection: !collection_label. Please contact your administrator.', array('!collection_label' => $collection_label)), 'error');
+      return FALSE;
+    }
+    $potential_models = array();
+    foreach ($content_models as $content_model) {
+      $identifier = $content_model->getIdentifier();
+      $name = $content_model->name;
+      $potential_models["$identifier"] = "$name";
+    }
+    return $potential_models;
+  }
 
   /**
-   * Create the Edit Form Builder.
-   *
-   * @param array $form
+   * Create page one.
+   * 
+   * @param string $pid
+   * @param string $dsid
+   * @param SoapClient $client
    * @param array $form_state
+   * 
+   * @return array
    */
-  public function __construct(array &$form_state) {
-    $this->formState = &$form_state;
-    
-    $this->pid = $this->storage['pid'];
-    $this->dsid = $this->storage['dsid'];
-    $this->formName = $this->storage['form_name'];
-    
+  public function createPageOne($pid, $client, array &$form_state) {
+    $content_model = ContentModel::loadFromObject($pid);
+    $form_names = islandora_content_model_get_form_names($content_model->pid);
+    if (empty($form_names)) {
+      throw new Exception('Couldn\'t Create Page One of the Edit Form.');
+    }
+    return array(
+      'indicator' => array(
+        '#type' => 'fieldset',
+        '#title' => t('Choose edit form.'),
+        'forms' => array(
+          '#type' => 'select',
+          '#title' => t('Forms'),
+          '#options' => $form_names,
+          '#description' => t('Select the form to populate the metadata of the new object.')
+        )
+      ),
+      'submit' => array(
+        '#type' => 'submit',
+        '#submit' => array('fedora_repository_edit_qdc_form_submit'),
+        '#value' => 'Next'
+      )
+    );
   }
 
   /**
-   * Submit the form. Modify the datastream identified by $this->dsid.
-   *
+   * Create page two.
+   * 
+   * @param string $pid
+   * @param string $dsid
+   * @param SoapClient $client
+   * @param array $form_state
+   * 
+   * @return array
+   */
+  public function createPageTwo($pid, $client, array &$form_state) {
+    $xml_form = new XMLForm($form_state);
+    if (!$xml_form->isInitialized()) {
+      module_load_include('inc', 'xml_form_api', 'XMLFormDefinition');
+      module_load_include('inc', 'xml_form_builder', 'FormBuilder');
+      $form_name = $form_state['values']['forms'];
+      $definition = FormBuilder::GetFormDefinition($form_name);
+      $form = XMLFormDefinition::GetDrupalForm($definition);
+      $properties = XMLFormDefinition::GetFormProperties($definition);
+      $content_model = ContentModel::loadFromObject($pid);
+      $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
+      $params = array('pid' => $pid, 'dsID' => $dsid, 'asOfDateTime' => "");
+      try {
+        $object = $client->__soapCAll('getDatastreamDissemination', array('parameters' => $params));
+      } catch (Exception $e) {
+        return array();
+      }
+      $xml = trim($object->dissemination->stream);
+      $document = new XMLDocument($properties['document']['root'], $properties['document']['namespaces'], $properties['document']['schema'], $xml);
+      $xml_form->initialize($form, $document);
+    }
+    $output = $xml_form->toArray();
+    $output['forms'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['values']['forms'],
+    );
+    $output['pid'] = array(
+      '#type' => 'hidden',
+      '#value' => $pid,
+    );
+    $output['dsid'] = array(
+      '#type' => 'hidden',
+      '#value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : $dsid,
+    );
+    return $output;
+  }
+
+  /**
+   * Create forms.
+   * 
+   * @param string $pid
+   * @param string $dsid
+   * @param SoapClient $client
+   * @param array $form_state
+   * 
+   * @return array
+   */
+  public function create($pid, $client, array &$form_state) {
+    $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
+    if ($page == 1) {
+      $form_state['storage']['xml'] = true;
+      return $this->createPageOne($pid, $client, $form_state);
+    }
+    else if ($form_state['storage']['xml']) {
+      return $this->createPageTwo($pid, $client, $form_state);
+    }
+    else {
+      throw new Exception('Couldn\'t Create the Edit Form.');
+    }
+  }
+
+  /**
+   * Submit.
+   * 
    * @param array $form
-   *   Drupal form to be validated.
+   * @param array $form_state 
    */
-  public function submitForm(&$form) {
+  public function submit(array &$form, array &$form_state) {
     global $base_url;
-    
-    
-
-    $object = new Fedora_Item($this->pid);
-    $object->modify_object($form['#post']['form_builder'][0]); // set label
-    $content_model = ContentModel::loadFromObject($this->pid);
-    
-    // Get the document...
-    list($class) = $this->loadDocumentClass($content_model);
-    $document = new $class($form, $this->formState);
-    
-    //
-    
-    $this->modifyDatastream($document, "{$this->dsid}", "{$this->dsid} Record", 'text/xml');
-    $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl'; // TODO add transform to content modeler ...
-    $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
-    $dublin_core->version = "1.0";
-    $dublin_core->encoding = "UTF-8";
-    $dublin_core->formatOutput = TRUE;
-    $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
+    $pid = $form_state['values']['pid'];
+    $dsid = $form_state['values']['dsid'];
+    // @todo: Set up the field that becomes the label.
+    /**
+     * $object = new Fedora_Item($pid);
+     * $object->modify_object($form['#post']['form_builder'][0]); // set label
+     */
+    $xml_form = new XMLForm($form_state);
+    $doc = $xml_form->submit($form, $form_state);
+    $document = $doc->document;
+    $this->fedoraItem = new Fedora_Item($pid);
+    $this->modifyDatastream($document, $pid, $dsid, "$dsid Record", 'text/xml');
+    // @todo: Perform Transform
+    /**
+     * $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl'; // TODO add transform to content modeler ...
+     * $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
+     * $dublin_core->version = "1.0";
+     * $dublin_core->encoding = "UTF-8";
+     * $dublin_core->formatOutput = TRUE;
+     * $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
+     */
     $this->formState['storage'] = NULL;
-    $this->formState['redirect'] = $base_url . '/fedora/repository/' . $this->pid;
-  }
-
-  /**
-   * Transforms $document in to a dublin core document via xsl transform.
-   *
-   * @param DOMDocument $document
-   * @param string $transform
-   *
-   * @return DOMDocument
-   */
-  private function transformDocumentIntoDublinCore(DOMDocument $document, $transform) {
-    $xsl = new DOMDocument();
-    $xsl->load($transform);
-    $xslt = new XSLTProcessor();
-    $xslt->importStyleSheet($xsl);
-    $doc = new DOMDocument();
-    $doc->loadXML($document->saveXML());
-    return $xslt->transformToDoc($doc->documentElement);
+    $this->formState['redirect'] = $base_url . '/fedora/repository/' . $pid;
   }
 
   /**
@@ -133,13 +210,13 @@ class EditObjectMetadataForm {
    * @param $mime_type
    *   Data stream mime_type.
    */
-  private function modifyManagedDatastream(DOMDocument $dom, $dsid, $label, $mime_type) {
+  private function modifyManagedDatastream(DOMDocument $dom, $pid, $dsid, $label, $mime_type) {
     $temp_file_dir = file_directory_temp();
-    $temp_file_path = file_create_filename("modsdatastream.xml", $temp_file_dir);
+    $temp_file_path = file_create_filename("datastream.xml", $temp_file_dir);
     if ($dom->save($temp_file_path)) {
       $temp_file_url = file_create_url($temp_file_path);
       if ($this->fedoraItem->modify_datastream_by_reference($temp_file_url, $dsid, $label, $mime_type) !== NULL) {
-        drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $this->pid, '%dsid' => $dsid)));
+        drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $pid, '%dsid' => $dsid)));
       }
     }
   }
@@ -158,9 +235,9 @@ class EditObjectMetadataForm {
    * @param $mime_type
    *   Data stream mime_type.
    */
-  private function modifyInlineDatastream($dom, $dsid, $label, $mime_type) {
+  private function modifyInlineDatastream(DOMDocument $dom, $pid, $dsid, $label, $mime_type) {
     if ($this->fedoraItem->modify_datastream_by_value($dom->saveXML(), $dsid, $label, $mime_type) !== NULL) {
-      drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $this->pid, '%dsid' => $dsid)));
+      drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $pid, '%dsid' => $dsid)));
     }
   }
 
@@ -179,12 +256,12 @@ class EditObjectMetadataForm {
    * @param $mime_type
    *   Data stream mime_type.
    */
-  private function modifyDatastream($dom, $dsid, $label, $mime_type) {
+  private function modifyDatastream($dom, $pid, $dsid, $label, $mime_type) {
     if ($this->isDatastreamManaged($dsid)) {
-      $this->modifyManagedDatastream($dom, $dsid, $label, $mime_type);
+      $this->modifyManagedDatastream($dom, $pid, $dsid, $label, $mime_type);
     }
     else {
-      $this->modifyInlineDatastream($dom, $dsid, $label, $mime_type);
+      $this->modifyInlineDatastream($dom, $pid, $dsid, $label, $mime_type);
     }
   }
 
