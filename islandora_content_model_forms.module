@@ -82,7 +82,7 @@ function islandora_content_model_forms_list() {
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}');
   while ($data = db_fetch_object($result)) {
-    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid);
+    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, $data->template != '');
   }
   return theme('list', $list, drupal_get_form('islandora_content_model_forms_list_form'));
 }
@@ -131,7 +131,7 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#required' => TRUE,
         '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
       ),
-      'label' => array(
+      'title_field' => array(
         '#type' => 'textfield',
         '#description' => 'The form field that you want to use for the objects label.',
         '#title' => 'Title Field',
@@ -168,6 +168,14 @@ function islandora_content_model_forms_list_form_submit($form, array &$form_stat
   $object->content_model = $form_state['values']['content_model'];
   $object->form_name = $form_state['values']['form_name'];
   $object->dsid = $form_state['values']['dsid'];
+  $object->title_field = $form_state['values']['title_field'];
+  $object->template = '';
+  $file_uploaded = $_FILES['files']['error']['file'] == 0;
+  if ($file_uploaded) {
+    $definition = new DOMDocument();
+    $definition->load($_FILES['files']['tmp_name']['file']);
+    $object->template = $definition->saveXML();
+  }
   if (drupal_write_record('islandora_content_model_forms', $object) !== FALSE) {
     drupal_set_message('Successfully added association.');
   }
@@ -186,7 +194,7 @@ function islandora_content_model_forms_get_content_model_names() {
 }
 
 /**
- * 
+ * @return string
  */
 function islandora_content_model_forms_query_content_models() {
   module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
@@ -233,6 +241,8 @@ function islandora_content_model_forms_parse_query($content) {
 
 /**
  * Gets a map of form names suitable for use as select #options.
+ * 
+ * @return array
  */
 function islandora_content_model_forms_get_form_names() {
   $form_names = array();
@@ -262,6 +272,9 @@ class AutoCompleteFilter {
 
 /**
  * Autocomplete the content model name..
+ * 
+ * @param string $string
+ * @return string
  */
 function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
@@ -271,7 +284,8 @@ function islandora_content_model_forms_autocomplete($string) {
 
 /**
  *
- * @param string $content_model 
+ * @param string $content_model
+ * @return array 
  */
 function islandora_content_model_get_form_names($content_model) {
   $list = array();
@@ -286,13 +300,20 @@ function islandora_content_model_get_form_names($content_model) {
 
 /**
  *
- * @param string $content_model 
+ * @param string $content_model
+ * @return string 
  */
 function islandora_content_model_get_form_names_ahah($content_model) {
   $list = islandora_content_model_get_form_names($content_model);
   return drupal_json($list);
 }
 
+/**
+ *
+ * @param string $content_model_pid
+ * @param string $form_name
+ * @return string 
+ */
 function islandora_content_model_get_dsid($content_model_pid, $form_name) {
   $result = db_query("SELECT dsid FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
   while ($data = db_fetch_object($result)) {
