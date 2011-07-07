@@ -376,6 +376,13 @@ class FOXML extends DOMDocument {
     $document = new DOMDocument();
     $document->loadXML($this->document->saveXML());
     $document = $xslt->transformToDoc($document->documentElement);
+    $xpath = new DOMXPath($document);
+    // Set the Label
+    $results = $xpath->query("*[local-name()='title']");
+    $results->item(0)->nodeValue = $this->label;
+    // Set the Pid
+    $results = $xpath->query("*[local-name()='identifier']");
+    $results->item(0)->nodeValue = $this->pid;
     if (isset($document->documentElement)) {
       return $this->importNode($document->documentElement, TRUE);
     }
