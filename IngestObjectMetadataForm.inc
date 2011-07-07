@@ -168,13 +168,13 @@ class IngestObjectMetadataForm {
    * @param array $form_state 
    */
   public function submit(array &$form, array &$form_state) {
+    global $base_url;
     $xml_form = new XMLForm($form_state);
     $doc = $xml_form->submit($form, $form_state);
     $document = $doc->document;
     $collection_pid = $form_state['values']['collection_pid'];
     $content_model_pid = $form_state['values']['content_model_pid'];
     $content_model_dsid = $form_state['values']['content_model_dsid'];
-    $error = TRUE;
     $should_redirect = TRUE;
     $collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
     if ($collection_policy !== FALSE) {
@@ -194,15 +194,12 @@ class IngestObjectMetadataForm {
         $transform = drupal_get_path('module', 'islandora_content_model_forms') . '/transforms/mods_to_dc.xsl';
         // @todo set up the transform...
         $foxml = new FOXML($label, $pid, $content_model_dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
-        $error = $foxml->ingest();
+        $foxml->ingest();
         $_SESSION['fedora_ingest_files'] = '';
         $form_state['storage'] = NULL;
       }
     }
-    if ($should_redirect) {
-      global $base_url;
-      $form_state['redirect'] = ($error) ? '' : $base_url . "/fedora/repository/{$collection_pid}";
-    }
+    $form_state['redirect'] = $base_url . "/fedora/repository/{$collection_pid}";
   }
 
 }
