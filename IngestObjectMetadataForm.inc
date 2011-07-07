@@ -181,26 +181,23 @@ class IngestObjectMetadataForm {
     $collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
     if ($collection_policy !== FALSE) {
       $relationship = $collection_policy->getRelationship();
-      $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
-      if ($content_model !== FALSE) {
-        module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
-        $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
-        $label = $form_state['values'][$object_label_identifier];
-        if (empty($form['#post']['active-toggle'])) {
-          $state = 'A';
-        }
-        else {
-          $state = $form['#post']['active-toggle'] ? 'A' : 'I';
-        }
-        $pid = $collection_policy->getNextPid($content_model_dsid);
-        $ingest_file_location = isset($form_state['values']['ingest-file-location']) ? $form_state['values']['ingest-file-location'] : NULL;
-        $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
-        $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
-        $foxml = new FOXML($label, $pid, $content_model_dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
-        $foxml->ingest();
-        $_SESSION['fedora_ingest_files'] = '';
-        $form_state['storage'] = NULL;
+      module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
+      $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
+      $label = $form_state['values'][$object_label_identifier];
+      if (empty($form['#post']['active-toggle'])) {
+        $state = 'A';
       }
+      else {
+        $state = $form['#post']['active-toggle'] ? 'A' : 'I';
+      }
+      $pid = $collection_policy->getNextPid($content_model_dsid);
+      $ingest_file_location = isset($form_state['values']['ingest-file-location']) ? $form_state['values']['ingest-file-location'] : NULL;
+      $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
+      $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
+      $foxml = new FOXML($label, $pid, $content_model_dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
+      $foxml->ingest();
+      $_SESSION['fedora_ingest_files'] = '';
+      $form_state['storage'] = NULL;
     }
     $form_state['redirect'] = $base_url . "/fedora/repository/{$collection_pid}";
   }
