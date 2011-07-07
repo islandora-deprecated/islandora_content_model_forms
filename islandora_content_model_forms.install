@@ -38,25 +38,31 @@ function islandora_content_model_forms_schema() {
       'content_model' => array(
         'description' => t('The name of the content model.'),
         'type' => 'varchar',
-        'length' =>128,
+        'length' => 128,
         'not null' => TRUE
       ),
       'form_name' => array(
         'description' => t('The name of the stored form.'),
         'type' => 'varchar',
-        'length' =>128,
+        'length' => 128,
         'not null' => TRUE
       ),
       'dsid' => array(
         'description' => t('The datastream id of the metadata to be edited.'),
         'type' => 'varchar',
-        'length' =>128,
+        'length' => 128,
         'not null' => TRUE
       ),
       'title_field' => array(
         'description' => t('The form field that you want to use for the objects label.'),
         'type' => 'varchar',
-        'length' =>128,
+        'length' => 128,
+        'not null' => TRUE
+      ),
+      'transform' => array(
+        'description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
+        'type' => 'varchar',
+        'length' => 128,
         'not null' => TRUE
       ),
       'template' => array(
