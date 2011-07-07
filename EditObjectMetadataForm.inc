@@ -122,6 +122,10 @@ class EditObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms'],
     );
+    $output['content_model_pid'] = array(
+      '#type' => 'hidden',
+      '#value' => $content_model_pid,
+    );
     $output['pid'] = array(
       '#type' => 'hidden',
       '#value' => $pid,
@@ -168,27 +172,79 @@ class EditObjectMetadataForm {
     $pid = $form_state['values']['pid'];
     $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
-    $content_model = ContentModel::loadFromObject($pid);
-    $content_model_pid = $content_model->pid;
-    $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
-    $label = $form_state['values'][$object_label_identifier];
-    $object = new Fedora_Item($pid);
-    $object->modify_object($label); // Set the label
+    $content_model_pid = $form_state['values']['content_model_pid'];
+    $label = $form_state['values'][islandora_content_model_get_title_field($content_model_pid, $form_name)];
+    $this->setObjectLabel($pid, $label);
+    $document = $this->modifyMetadata($pid, $dsid, $form, $form_state);
+    $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
+    $this->transform($document, $transform, $pid, $label);
+    $form_state['storage'] = NULL;
+    $form_state['redirect'] = $base_url . '/fedora/repository/' . $pid;
+  }
+
+  /**
+   *
+   * @param string $pid
+   * @param string $dsid
+   * @param array $form
+   * @param array $form_state 
+   */
+  private function modifyMetadata($pid, $dsid, array &$form, array &$form_state) {
     $xml_form = new XMLForm($form_state);
     $doc = $xml_form->submit($form, $form_state);
     $document = $doc->document;
     $this->modifyDatastream($document, $pid, $dsid, "$dsid Record", 'text/xml');
-    // @todo: Perform Transform
-    /**
-     * $transform = drupal_get_path('module', 'islandora_form_builder') . '/transforms/mods_to_dc.xsl'; // TODO add transform to content modeler ...
-     * $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
-     * $dublin_core->version = "1.0";
-     * $dublin_core->encoding = "UTF-8";
-     * $dublin_core->formatOutput = TRUE;
-     * $this->modifyDatastream($dublin_core, 'DC', "Dublin Core Record", 'text/xml');
-     */
-    $form_state['storage'] = NULL;
-    $form_state['redirect'] = $base_url . '/fedora/repository/' . $pid;
+    return $document;
+  }
+
+  /**
+   *
+   * @param string $label 
+   */
+  private function setObjectLabel($pid, $label) {
+    $object = new Fedora_Item($pid);
+    $object->modify_object($label); // Set the label
+  }
+
+  /**
+   *
+   * @param DOMDocument $document
+   * @param string $transform
+   * @param string $pid
+   * @param string $label 
+   */
+  private function transform(DOMDocument $document, $transform, $pid, $label) {
+    $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
+    $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
+    $xpath = new DOMXPath($dublin_core);
+    // Set the Label
+    $results = $xpath->query("*[local-name()='title']");
+    $results->item(0)->nodeValue = $label;
+    // Set the Pid
+    $results = $xpath->query("*[local-name()='identifier']");
+    $results->item(0)->nodeValue = $pid;
+    $dublin_core->version = "1.0";
+    $dublin_core->encoding = "UTF-8";
+    $dublin_core->formatOutput = TRUE;
+    $this->modifyDatastream($dublin_core, $pid, 'DC', "Dublin Core Record", 'text/xml');
+  }
+
+  /**
+   * Transforms $document in to a dublin core document via xsl transform.
+   *
+   * @param DOMDocument $document
+   * @param string $transform
+   *
+   * @return DOMDocument
+   */
+  private function transformDocumentIntoDublinCore(DOMDocument $document, $transform) {
+    $xsl = new DOMDocument();
+    $xsl->load($transform);
+    $xslt = new XSLTProcessor();
+    $xslt->importStyleSheet($xsl);
+    $doc = new DOMDocument();
+    $doc->loadXML($document->saveXML());
+    return $xslt->transformToDoc($doc->documentElement);
   }
 
   /**
