@@ -99,6 +99,8 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
+    $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
+    $content_model_dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
     $xml_form = new XMLForm($form_state);
     if (!$xml_form->isInitialized()) {
       module_load_include('inc', 'xml_form_api', 'XMLFormDefinition');
@@ -107,12 +109,11 @@ class IngestObjectMetadataForm {
       $definition = FormBuilder::GetFormDefinition($form_name);
       $form = XMLFormDefinition::GetDrupalForm($definition);
       $properties = XMLFormDefinition::GetFormProperties($definition);
-      $document = new XMLDocument($properties['document']['root'], $properties['document']['namespaces'], $properties['document']['schema']);
+      $xml = islandora_content_model_get_template($content_model_pid, $form_name);
+      $document = new XMLDocument($properties['document']['root'], $properties['document']['namespaces'], $properties['document']['schema'], $xml);
       $xml_form->initialize($form, $document);
     }
     $form = $xml_form->toArray();
-    $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
-    $content_model_dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
     $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
@@ -175,6 +176,7 @@ class IngestObjectMetadataForm {
     $collection_pid = $form_state['values']['collection_pid'];
     $content_model_pid = $form_state['values']['content_model_pid'];
     $content_model_dsid = $form_state['values']['content_model_dsid'];
+    $form_name = $form_state['values']['forms'];
     $should_redirect = TRUE;
     $collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
     if ($collection_policy !== FALSE) {
@@ -182,7 +184,8 @@ class IngestObjectMetadataForm {
       $content_model = ContentModel::loadFromModel($content_model_pid, $content_model_dsid);
       if ($content_model !== FALSE) {
         module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
-        $label = 'Default Title'; // @todo: Set the value to get this from the form.
+        $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
+        $label = $form_state['values'][$object_label_identifier];
         if (empty($form['#post']['active-toggle'])) {
           $state = 'A';
         }

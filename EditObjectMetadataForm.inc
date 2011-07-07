@@ -107,6 +107,17 @@ class EditObjectMetadataForm {
       $xml_form->initialize($form, $document);
     }
     $output = $xml_form->toArray();
+    // Set the object label
+    $content_model = ContentModel::loadFromObject($pid);
+    $content_model_pid = $content_model->pid;
+    $form_name = $form_state['values']['forms'];
+    $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
+    if (isset($output[$object_label_identifier])) {
+      $object = new Fedora_Item($pid);
+      $output[$object_label_identifier]['#default_value'] = isset($form_state['values'][$object_label_identifier]) ?
+          $form_state['values'][$object_label_identifier] :
+          $object->objectProfile->objLabel;
+    }
     $output['forms'] = array(
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms'],
@@ -156,11 +167,13 @@ class EditObjectMetadataForm {
     global $base_url;
     $pid = $form_state['values']['pid'];
     $dsid = $form_state['values']['dsid'];
-    // @todo: Set up the field that becomes the label.
-    /**
-     * $object = new Fedora_Item($pid);
-     * $object->modify_object($form['#post']['form_builder'][0]); // set label
-     */
+    $form_name = $form_state['values']['forms'];
+    $content_model = ContentModel::loadFromObject($pid);
+    $content_model_pid = $content_model->pid;
+    $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
+    $label = $form_state['values'][$object_label_identifier];
+    $object = new Fedora_Item($pid);
+    $object->modify_object($label); // Set the label
     $xml_form = new XMLForm($form_state);
     $doc = $xml_form->submit($form, $form_state);
     $document = $doc->document;

@@ -323,3 +323,35 @@ function islandora_content_model_get_dsid($content_model_pid, $form_name) {
   }
   return NULL;
 }
+
+/**
+ *
+ * @param string $content_model_pid
+ * @param string $form_name
+ * @return string 
+ */
+function islandora_content_model_get_title_field($content_model_pid, $form_name) {
+  $result = db_query("SELECT title_field FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
+  while ($data = db_fetch_object($result)) {
+    if (isset($data->title_field)) {
+      return $data->title_field;
+    }
+  }
+  return NULL;
+}
+
+/**
+ *
+ * @param type $content_model_pid
+ * @param type $form_name
+ * @return type 
+ */
+function islandora_content_model_get_template($content_model_pid, $form_name) {
+  $result = db_query("SELECT template FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
+  while ($data = db_fetch_object($result)) {
+    if (isset($data->template) && $data->template != '') {
+      return $data->template;
+    }
+  }
+  return NULL;
+}
