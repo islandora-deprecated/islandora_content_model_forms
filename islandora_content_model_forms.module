@@ -112,6 +112,7 @@ function islandora_content_model_forms_list_form(array &$form_state) {
     return;
   }
   $form = array(
+    '#attributes' => array('enctype' => 'multipart/form-data'),
     'fieldset' => array(
       '#type' => 'fieldset',
       '#title' => 'Add Association',
@@ -119,9 +120,22 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#type' => 'textfield',
         '#title' => 'Content Model',
         '#autocomplete_path' => 'admin/content/model/forms/autocomplete',
-        '#description' => 'The content model to associate with a form. If the content model has no decendants it will not show up in autocomplete.',
+        '#description' => 'The content model to associate with a form.<br/> If the content model has no decendants it will not show up in autocomplete.',
         '#options' => $content_models,
         '#default_value' => isset($form_state['values']['content_model']) ? $form_state['values']['content_model'] : NULL,
+      ),
+      'dsid' => array(
+        '#type' => 'textfield',
+        '#description' => 'The datastream ID of where the objects metadata is stored.<br/>&nbsp',
+        '#title' => 'Metadata Datastream ID',
+        '#required' => TRUE,
+        '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
+      ),
+      'label' => array(
+        '#type' => 'textfield',
+        '#description' => 'The form field that you want to use for the objects label.',
+        '#title' => 'Title Field',
+        '#required' => TRUE
       ),
       'form_name' => array(
         '#type' => 'select',
@@ -130,16 +144,14 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#options' => $form_names,
         '#default_value' => isset($form_state['values']['form_name']) ? $form_state['values']['form_name'] : NULL,
       ),
-      'dsid' => array(
-        '#type' => 'textfield',
-        '#description' => 'The datastream ID of where the objects metadata is stored.',
-        '#title' => 'Metadata Datastream ID',
-        '#required' => TRUE,
-        '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
+      'file' => array(
+        '#type' => 'file',
+        '#title' => t('Upload Template Document'),
+        '#description' => t('A sample metadata file used to prepopulate the form on ingest.')
       ),
       'submit' => array(
         '#type' => 'submit',
-        '#value' => 'Add'
+        '#value' => 'Add Association'
       )
     ),
   );
