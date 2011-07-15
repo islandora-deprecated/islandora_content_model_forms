@@ -100,7 +100,8 @@ class IngestObjectMetadataForm {
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
-    $content_model_dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
+    $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
+    $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
     $xml_form = new XMLForm($form_state);
     if (!$xml_form->isInitialized()) {
       module_load_include('inc', 'xml_form_api', 'XMLFormDefinition');
@@ -125,6 +126,10 @@ class IngestObjectMetadataForm {
     $form['content_model_dsid'] = array(
       '#type' => 'hidden',
       '#value' => $content_model_dsid
+    );
+    $form['dsid'] = array(
+      '#type' => 'hidden',
+      '#value' => $dsid
     );
     $form['models'] = array(
       '#type' => 'hidden',
@@ -176,6 +181,7 @@ class IngestObjectMetadataForm {
     $collection_pid = $form_state['values']['collection_pid'];
     $content_model_pid = $form_state['values']['content_model_pid'];
     $content_model_dsid = $form_state['values']['content_model_dsid'];
+    $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
     $should_redirect = TRUE;
     $collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
@@ -194,7 +200,7 @@ class IngestObjectMetadataForm {
       $ingest_file_location = isset($form_state['values']['ingest-file-location']) ? $form_state['values']['ingest-file-location'] : NULL;
       $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
       $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
-      $foxml = new FOXML($label, $pid, $content_model_dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
+      $foxml = new FOXML($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
       $foxml->ingest();
       $_SESSION['fedora_ingest_files'] = '';
       $form_state['storage'] = NULL;
