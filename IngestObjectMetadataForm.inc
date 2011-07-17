@@ -188,10 +188,8 @@ class IngestObjectMetadataForm {
     if ($collection_policy !== FALSE) {
       $relationship = $collection_policy->getRelationship();
       module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
-      $label = islandora_content_model_get_title_field($content_model_pid, $form_name);
-      if (preg_match('/[[]]/', $label) > 0) {
-        eval('$label = $form_state[\'values\']' . $label . ';');
-      }
+      $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
+      eval('$label = $form_state[\'values\']' . $label_field . ';');
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
       }

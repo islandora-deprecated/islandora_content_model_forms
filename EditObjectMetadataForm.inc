@@ -111,16 +111,16 @@ class EditObjectMetadataForm {
     $content_model = ContentModel::loadFromObject($pid);
     $content_model_pid = $content_model->pid;
     $form_name = $form_state['values']['forms'];
-    $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
-    $label = $object_label_identifier;
-    if (strpos($object_label_identifier, '[') !== FALSE) {
-      eval("$label = {$form_state['values']}" . $object_label_identifier . ";");
+    $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
+    eval('$label_is_set = isset($form_state[\'values\']' . $label_field . ');');
+    if ($label_is_set) {
+      eval('$label = $form_state[\'values\']' . $label_field . ';');
+      eval('$output' . $label_field . '[\'#default_value\'] = $label;');
     }
-    if (isset($output[$object_label_identifier])) {
+    else {
       $object = new Fedora_Item($pid);
-      $output[$object_label_identifier]['#default_value'] = isset($form_state['values'][$object_label_identifier]) ?
-          $form_state['values'][$object_label_identifier] :
-          $object->objectProfile->objLabel;
+      $label = $object->objectProfile->objLabel;
+      eval('$output' . $label_field . '[\'#default_value\'] = $label;');
     }
     $output['forms'] = array(
       '#type' => 'hidden',
@@ -177,7 +177,8 @@ class EditObjectMetadataForm {
     $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
     $content_model_pid = $form_state['values']['content_model_pid'];
-    $label = $form_state['values'][islandora_content_model_get_title_field($content_model_pid, $form_name)];
+    $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
+    eval('$label = $form_state[\'values\']' . $label_field . ';');
     $this->setObjectLabel($pid, $label);
     $document = $this->modifyMetadata($pid, $dsid, $form, $form_state);
     $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
