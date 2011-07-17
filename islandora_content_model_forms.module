@@ -6,6 +6,14 @@
  * @file
  *
  */
+/**
+ * Modules
+ */
+module_load_include('inc', 'php_lib', 'Array');
+
+/**
+ * Constants
+ */
 define("PERM_ADMIN_FORM_ASSOCIATION", 'Admin Form Associations');
 
 /**
@@ -26,6 +34,13 @@ function islandora_content_model_forms_menu() {
     'title' => 'Auto Complete List of Models.',
     'description' => 'Lists Content Models.',
     'page callback' => 'islandora_content_model_forms_autocomplete',
+    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/model/forms/titles'] = array(
+    'title' => 'List of elements to use as titles.',
+    'description' => 'Lists Elements in a form.',
+    'page callback' => 'islandora_content_model_forms_ahah',
     'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'type' => MENU_CALLBACK,
   );
@@ -78,7 +93,7 @@ function islandora_content_model_forms_theme() {
  */
 function islandora_content_model_forms_list() {
   $path = drupal_get_path('module', 'islandora_content_model_forms');
-  drupal_add_css("$path/css/form.css");
+  //drupal_add_css("$path/css/form.css");
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}');
   while ($data = db_fetch_object($result)) {
@@ -108,10 +123,15 @@ function islandora_content_model_forms_list_form(array &$form_state) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $form_names = islandora_content_model_forms_get_form_names();
   $transforms = islandora_content_model_forms_get_transforms();
+  $path = drupal_get_path('module', 'islandora_content_model_forms');
+  drupal_add_js("$path/js/fix-jquery-update.js", 'theme');
   if (count($form_names) == 0 || count($content_models) == 0) {
     drupal_set_message('Both forms and content models must be defined to add new associations.', 'error');
     return;
   }
+  $form_name = isset($form_state['values']['name']) ?
+      $form_state['values']['name'] :
+      key($form_names);
   $form = array(
     '#attributes' => array('enctype' => 'multipart/form-data'),
     'fieldset' => array(
@@ -134,17 +154,24 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
       ),
       'title_field' => array(
-        '#type' => 'textfield',
-        '#description' => 'The form field that you want to use for the objects label.',
+        '#type' => 'select',
         '#title' => 'Title Field',
+        '#description' => 'The form field that you want to use for the objects label.',
+        '#prefix' => '<div id="ahah-wrapper">',
+        '#suffix' => '</div>',
+        '#options' => islandora_content_model_forms_get_title_options($form_name),
         '#required' => TRUE
       ),
-      'form_name' => array(
+      'name' => array(
         '#type' => 'select',
         '#title' => 'Form Name',
         '#description' => 'The name of the form to associate with the content model.',
         '#options' => $form_names,
-        '#default_value' => isset($form_state['values']['form_name']) ? $form_state['values']['form_name'] : NULL,
+        '#default_value' => $form_name,
+        '#ahah' => array(
+          'path' => 'admin/content/model/forms/titles',
+          'wrapper' => 'ahah-wrapper',
+        )
       ),
       'transform' => array(
         '#type' => 'select',
@@ -173,10 +200,10 @@ function islandora_content_model_forms_list_form(array &$form_state) {
  */
 function islandora_content_model_forms_list_form_validate(array $form, array &$form_state) {
   $content_model_pid = $form_state['values']['content_model'];
-  $form_name = $form_state['values']['form_name'];
+  $form_name = $form_state['values']['name'];
   $form_association_exists = islandora_content_model_association_exists($content_model_pid, $form_name);
   if ($form_association_exists) {
-    form_set_error('form_name', "Form Association between '$content_model_pid' and '$form_name' already exists.");
+    form_set_error('name', "Form Association between '$content_model_pid' and '$form_name' already exists.");
   }
 }
 
@@ -188,14 +215,13 @@ function islandora_content_model_forms_list_form_validate(array $form, array &$f
 function islandora_content_model_forms_list_form_submit(array $form, array &$form_state) {
   $object = new stdClass();
   $object->content_model = $form_state['values']['content_model'];
-  $object->form_name = $form_state['values']['form_name'];
+  $object->form_name = $form_state['values']['name'];
   $object->dsid = $form_state['values']['dsid'];
   $object->title_field = $form_state['values']['title_field'];
   $object->transform = $form_state['values']['transform'];
   $object->template = '';
   $file_uploaded = $_FILES['files']['error']['file'] == 0;
   if ($file_uploaded) {
-    var_dump($_FILES);
     $definition = new DOMDocument();
     $definition->load($_FILES['files']['tmp_name']['file']);
     $object->template = $definition->saveXML();
@@ -428,4 +454,77 @@ function islandora_content_model_get_transform($content_model_pid, $form_name) {
     }
   }
   return NULL;
+}
+
+/**
+ *
+ * @param string $form_name 
+ * @return array
+ */
+function islandora_content_model_forms_get_title_options($form_name) {
+  if (isset($form_name)) {
+    $result = db_query("SELECT form FROM {xml_forms} where name = '%s'", $form_name);
+    while ($data = db_fetch_object($result)) {
+      if (isset($data->form)) {
+        $doc = new DOMDocument();
+        $doc->loadXML($data->form);
+        $xpath = new DOMXPath($doc);
+        $result = $xpath->query('//element[@name]');
+        $elements = dom_node_list_to_array($result);
+        if (count($elements) > 0) {
+          $output = array();
+          foreach ($elements as $element) {
+            $result = $xpath->query('ancestor-or-self::node()[@name]', $element);
+            $ancestors = dom_node_list_to_array($result);
+            $value = $label = '';
+            if (count($ancestors) > 0) {
+              foreach ($ancestors as $ancestor) {
+                $name = $ancestor->getAttribute('name');
+                $value .= "['$name']";
+                $label .= "['$name']";
+              }
+            }
+            $output[$value] = $label;
+          }
+          return $output;
+        }
+        return array('one' => 'one');
+      }
+    }
+  }
+  return array(NULL => 'invalid');
+}
+
+/**
+ * 
+ */
+function islandora_content_model_forms_ahah() {
+  $form_build_id = $_REQUEST['form_build_id'];
+  $form_state = array('storage' => NULL, 'submitted' => FALSE, 'post' => $_POST);
+  if (!$form = form_get_cache($form_build_id, $form_state)) {
+    header("HTTP/1.0 200 OK", false, 200);
+    exit();
+  }
+  $form_id = array_shift($form['#parameters']);
+  $args = $form['#parameters'];
+  $form['#post'] = $_POST;
+  $form['#redirect'] = FALSE;
+  $form['#programmed'] = FALSE;
+  $form_state['values'] = array();
+  $form = form_builder($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  $data = theme('status_messages');
+  $element = $form['fieldset']['title_field'];
+  if (isset($element)) {
+    unset($element['#prefix'], $element['#suffix']);
+    $data = drupal_render($element);
+  }
+  $javascript = drupal_add_js(NULL, NULL, 'header');
+  $settings = call_user_func_array('array_merge_recursive', $javascript['setting']);
+  unset($settings['ahah']['']);
+  drupal_json(array(
+    'status' => TRUE,
+    'data' => $data,
+    'settings' => $settings,
+  ));
 }

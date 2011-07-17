@@ -112,6 +112,10 @@ class EditObjectMetadataForm {
     $content_model_pid = $content_model->pid;
     $form_name = $form_state['values']['forms'];
     $object_label_identifier = islandora_content_model_get_title_field($content_model_pid, $form_name);
+    $label = $object_label_identifier;
+    if (strpos($object_label_identifier, '[') !== FALSE) {
+      eval("$label = {$form_state['values']}" . $object_label_identifier . ";");
+    }
     if (isset($output[$object_label_identifier])) {
       $object = new Fedora_Item($pid);
       $output[$object_label_identifier]['#default_value'] = isset($form_state['values'][$object_label_identifier]) ?
