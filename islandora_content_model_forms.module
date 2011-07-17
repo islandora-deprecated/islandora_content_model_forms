@@ -143,7 +143,6 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#required' => true,
         '#autocomplete_path' => 'admin/content/model/forms/autocomplete',
         '#description' => 'The content model to associate with a form.<br/> If the content model has no decendants it will not show up in autocomplete.',
-        '#options' => $content_models,
         '#default_value' => isset($form_state['values']['content_model']) ? $form_state['values']['content_model'] : NULL,
       ),
       'dsid' => array(
@@ -348,6 +347,7 @@ class AutoCompleteFilter {
 function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $output = array_filter($content_models, new AutoCompleteFilter($string));
+  $output[$string] = $string; 
   return drupal_json($output);
 }
 
