@@ -4,7 +4,7 @@
     <table>
       <tr>
         <th>Content Model</th>
-        <th>Datastream ID</th>
+        <th>DatastreamZ ID</th>
         <th>Title Field</th>
         <th>Form</th>
         <th>Transform</th>
@@ -20,7 +20,7 @@
         <td><?php print $form_name ?></td>
         <td><?php print $transform ?></td>
         <td><?php print ($has_template) ? 'True' : 'False' ?></td>
-        <td><?php print "<a href='/admin/content/model/forms/remove/$id'>Delete</a>"?></td>
+        <td><?php print "<a href='admin/content/model/forms/remove/$id'>Delete</a>"?></td>
       </tr>
       <?php endforeach; ?>
     </table>
