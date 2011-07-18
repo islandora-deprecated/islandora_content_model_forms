@@ -20,7 +20,7 @@
         <td><?php print $form_name ?></td>
         <td><?php print $transform ?></td>
         <td><?php print ($has_template) ? 'True' : 'False' ?></td>
-        <td><?php print "<a href='/admin/content/model/forms/remove/$id'>Delete</a>"?></td>
+        <td><?php print "<a href='forms/remove/$id'>Delete</a>"?></td>
       </tr>
       <?php endforeach; ?>
     </table>
