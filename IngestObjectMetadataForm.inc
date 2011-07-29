@@ -18,9 +18,9 @@ class IngestObjectMetadataForm {
 
   /**
    * Get Content Models for the form.
-   * 
+   *
    * @param string $collection_pid
-   * 
+   *
    * @return array
    */
   public function getPotentialContentModels($collection_pid) {
@@ -43,11 +43,11 @@ class IngestObjectMetadataForm {
 
   /**
    * Create the first page of the Ingest Object Metadata form.
-   * 
+   *
    * @param string $collection_pid
    * @param string $collection_label
    * @param array $form_state
-   * 
+   *
    * @return array
    */
   public function createPageOne($collection_pid, $collection_label, array &$form_state) {
@@ -72,7 +72,7 @@ class IngestObjectMetadataForm {
         ),
         'forms' => array(
           '#type' => 'select',
-          '#title' => t('Content models available'),
+          '#title' => t('Select form'),
           '#options' => $form_names,
           '#description' => t('Select the form to populate the metadata of the new object.')
         ),
@@ -91,11 +91,11 @@ class IngestObjectMetadataForm {
 
   /**
    * Create the second page of the Ingest Object Metadata form.
-   * 
+   *
    * @param string $collection_pid
    * @param string $collection_label
    * @param array $form_state
-   * 
+   *
    * @return array
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
@@ -115,6 +115,7 @@ class IngestObjectMetadataForm {
       $xml_form->initialize($form, $document);
     }
     $form = $xml_form->toArray();
+
     $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
@@ -139,16 +140,17 @@ class IngestObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms']
     );
+
     return $form;
   }
 
   /**
    * Create the Ingest Object Metadata form.
-   * 
+   *
    * @param string $collection_pid
    * @param string $collection_label
    * @param array $form_state
-   * 
+   *
    * @return array
    */
   public function create($collection_pid, $collection_label, array &$form_state) {
@@ -161,23 +163,43 @@ class IngestObjectMetadataForm {
       return $this->createPageTwo($collection_pid, $collection_label, $form_state);
     }
     else {
-      throw new Exception('Couldn\'t Create the Ingest Form.');
+      throw new Exception("Couldn't Create the Ingest Form.");
     }
   }
 
   /**
    * Ingest the object.
-   * 
+   *
    * @global string $base_url
-   * 
+   *
    * @param array $form
-   * @param array $form_state 
+   * @param array $form_state
    */
   public function submit(array &$form, array &$form_state) {
     global $base_url;
-    $xml_form = new XMLForm($form_state);
-    $doc = $xml_form->submit($form, $form_state);
-    $document = $doc->document;
+
+    if ($_files['files']['name']['file_upload'] && $_files['files']['name']['file_upload'] == 'text/xml') {
+      $tmpDir = file_directory_path();
+      if (!$file = file_save_upload('file_upload', NULL, $tmpDir)) {
+        drupal_set_message('No file loaded', 'warning');
+        return;
+      }
+      $file = "$tmpDir/$file->filename";
+      $mods_xml = file_get_contents($file);
+      $document = DOMDocument::loadXml($mods_xml);
+      file_delete($file);
+      if (!$document) {
+        drupal_set_message('This does not appear to be a valid XML file', 'warning');
+        return;
+      }
+
+    }
+    else {
+      $xml_form = new XMLForm($form_state);
+      $doc = $xml_form->submit($form, $form_state);
+      $document = $doc->document;
+    }
+
     $collection_pid = $form_state['values']['collection_pid'];
     $content_model_pid = $form_state['values']['content_model_pid'];
     $content_model_dsid = $form_state['values']['content_model_dsid'];
@@ -209,3 +231,4 @@ class IngestObjectMetadataForm {
   }
 
 }
+
