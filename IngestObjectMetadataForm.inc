@@ -177,8 +177,7 @@ class IngestObjectMetadataForm {
    */
   public function submit(array &$form, array &$form_state) {
     global $base_url;
-
-    if ($_files['files']['name']['file_upload'] && $_files['files']['name']['file_upload'] == 'text/xml') {
+    if (isset($_FILES['files']) && $_FILES['files']['name']['file_upload'] && $_FILES['files']['name']['file_upload'] == 'text/xml') {
       $tmpDir = file_directory_path();
       if (!$file = file_save_upload('file_upload', NULL, $tmpDir)) {
         drupal_set_message('No file loaded', 'warning');

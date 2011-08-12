@@ -177,12 +177,12 @@ class EditObjectMetadataForm {
     $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
     $content_model_pid = $form_state['values']['content_model_pid'];
-    $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
-    eval('$label = $form_state[\'values\']' . $label_field . ';');
-    $this->setObjectLabel($pid, $label);
+    //$label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
+    //eval('$label = $form_state[\'values\']' . $label_field . ';');
+    //$this->setObjectLabel($pid, $label);
     $document = $this->modifyMetadata($pid, $dsid, $form, $form_state);
-    $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
-    $this->transform($document, $transform, $pid, $label);
+    //$transform = islandora_content_model_get_transform($content_model_pid, $form_name);
+    //$this->transform($document, $transform, $pid, $label);
     $form_state['storage'] = NULL;
     $form_state['redirect'] = $base_url . '/fedora/repository/' . $pid;
   }
@@ -198,7 +198,9 @@ class EditObjectMetadataForm {
     $xml_form = new XMLForm($form_state);
     $doc = $xml_form->submit($form, $form_state);
     $document = $doc->document;
-    $this->modifyDatastream($document, $pid, $dsid, "$dsid Record", 'text/xml');
+    dom_document_pretty_print($document);
+    exit();
+    //$this->modifyDatastream($document, $pid, $dsid, "$dsid Record", 'text/xml');
     return $document;
   }
 
