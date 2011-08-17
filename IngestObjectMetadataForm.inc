@@ -111,7 +111,8 @@ class IngestObjectMetadataForm {
       $form = XMLFormDefinition::GetDrupalForm($definition);
       $properties = XMLFormDefinition::GetFormProperties($definition);
       $xml = islandora_content_model_get_template($content_model_pid, $form_name);
-      $document = new XMLDocument($properties['document']['root'], $properties['document']['namespaces'], $properties['document']['schema'], $xml);
+      $namespaces = new Namespaces($properties['namespaces'], $properties['default_uri']);
+      $document = new XMLDocument($properties['root_name'], $namespaces, $properties['schema_uri'], $xml);
       $xml_form->initialize($form, $document);
     }
     $form = $xml_form->toArray();

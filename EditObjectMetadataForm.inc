@@ -94,6 +94,7 @@ class EditObjectMetadataForm {
       $definition = FormBuilder::GetFormDefinition($form_name);
       $form = XMLFormDefinition::GetDrupalForm($definition);
       $properties = XMLFormDefinition::GetFormProperties($definition);
+      $namespaces = new Namespaces($properties['namespaces'], $properties['default_uri']);
       $content_model = ContentModel::loadFromObject($pid);
       $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
       $params = array('pid' => $pid, 'dsID' => $dsid, 'asOfDateTime' => "");
@@ -103,7 +104,7 @@ class EditObjectMetadataForm {
         return array();
       }
       $xml = trim($object->dissemination->stream);
-      $document = new XMLDocument($properties['document']['root'], $properties['document']['namespaces'], $properties['document']['schema'], $xml);
+      $document = new XMLDocument($properties['root_name'], $namespaces, $properties['schema_uri'], $xml);
       $xml_form->initialize($form, $document);
     }
     $output = $xml_form->toArray();
