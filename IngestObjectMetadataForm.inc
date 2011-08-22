@@ -115,7 +115,7 @@ class IngestObjectMetadataForm {
       $document = new XMLDocument($properties['root_name'], $namespaces, $properties['schema_uri'], $xml);
       $xml_form->initialize($form, $document);
     }
-    $form = $xml_form->toArray();
+    $form = $xml_form->toArray($form_state);
 
     $form['collection_pid'] = array(
       '#type' => 'hidden',
