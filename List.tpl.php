@@ -4,7 +4,7 @@
     <table>
       <tr>
         <th>Content Model</th>
-        <th>DatastreamZ ID</th>
+        <th>Datastream ID</th>
         <th>Title Field</th>
         <th>Form</th>
         <th>Transform</th>
