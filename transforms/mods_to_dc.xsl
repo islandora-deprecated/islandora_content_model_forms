@@ -4,7 +4,7 @@
 	xmlns:dc="http://purl.org/dc/elements/1.1/"
 	xmlns:srw_dc="info:srw/schema/1/dc-schema"
 	xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+	xmlns:xsl="http://www.w3.org/1999/XSL/Transform" extension-element-prefixes="dc">
 
 <!-- 
 This stylesheet transforms MODS version 3.2 records and collections of records to simple Dublin Core (DC) records, 
@@ -38,7 +38,6 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 -->
 
 	<xsl:output method="xml" indent="yes"/>
-	
 	<xsl:template match="/">
 		<xsl:choose>
 		<xsl:when test="//mods:modsCollection">			
