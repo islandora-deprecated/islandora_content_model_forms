@@ -29,7 +29,7 @@ class IngestObjectMetadataForm {
       return FALSE;
     }
     if (!($content_models = $collection_policy->getContentModels())) {
-      drupal_set_message(t('No content models associated with this collection: !collection_label. Please contact your administrator.', array('!collection_label' => $collection_label)), 'error');
+      drupal_set_message(t('No content models associated with this collection: !collection_pid. Please contact your administrator.', array('!collection_pid' => $collection_pid)), 'error');
       return FALSE;
     }
     $potential_models = array();
