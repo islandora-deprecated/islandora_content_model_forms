@@ -152,15 +152,6 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#required' => TRUE,
         '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
       ),
-      'title_field' => array(
-        '#type' => 'select',
-        '#title' => 'Title Field',
-        '#description' => 'The form field that you want to use for the objects label.',
-        '#prefix' => '<div id="ahah-wrapper">',
-        '#suffix' => '</div>',
-        '#options' => islandora_content_model_forms_get_title_options($form_name),
-        '#required' => TRUE
-      ),
       'name' => array(
         '#type' => 'select',
         '#title' => 'Form Name',
@@ -171,6 +162,15 @@ function islandora_content_model_forms_list_form(array &$form_state) {
           'path' => 'admin/content/model/forms/titles',
           'wrapper' => 'ahah-wrapper',
         )
+      ),
+      'title_field' => array(
+        '#type' => 'select',
+        '#title' => 'Title Field',
+        '#description' => 'The form field that you want to use for the objects label.',
+        '#prefix' => '<div id="ahah-wrapper">',
+        '#suffix' => '</div>',
+        '#options' => islandora_content_model_forms_get_title_options($form_name),
+        '#required' => TRUE
       ),
       'transform' => array(
         '#type' => 'select',
