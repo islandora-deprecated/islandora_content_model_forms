@@ -89,22 +89,15 @@ class EditObjectMetadataForm {
     $xml_form = new XMLForm($form_state);
     if (!$xml_form->isInitialized()) {
       module_load_include('inc', 'xml_form_api', 'XMLFormDefinition');
-      module_load_include('inc', 'xml_form_builder', 'FormBuilder');
-      $form_name = $form_state['values']['forms'];
-      $definition = FormBuilder::GetFormDefinition($form_name);
-      $form = XMLFormDefinition::GetDrupalForm($definition);
-      $properties = XMLFormDefinition::GetFormProperties($definition);
-      $namespaces = new Namespaces($properties['namespaces'], $properties['default_uri']);
+      module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
       $content_model = ContentModel::loadFromObject($pid);
       $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
-      $params = array('pid' => $pid, 'dsID' => $dsid, 'asOfDateTime' => "");
-      try {
-        $object = $client->__soapCAll('getDatastreamDissemination', array('parameters' => $params));
-      } catch (Exception $e) {
-        return array();
-      }
-      $xml = trim($object->dissemination->stream);
-      $document = new XMLDocument($properties['root_name'], $namespaces, $properties['schema_uri'], $xml);
+      $xml = $this->getMetadata($pid, $dsid);
+      $form_name = $form_state['values']['forms'];
+      $definition = XMLFormDatabase::Get($form_name);
+      $definition = new XMLFormDefinition($definition);
+      $form = $definition->getForm();
+      $document = $definition->createXMLDocument($xml);
       $xml_form->initialize($form, $document);
     }
     $output = $xml_form->toArray($form_state);
@@ -140,6 +133,16 @@ class EditObjectMetadataForm {
       '#value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : $dsid,
     );
     return $output;
+  }
+
+  private function getMetadata($pid, $dsid) {
+    $params = array('pid' => $pid, 'dsID' => $dsid, 'asOfDateTime' => "");
+    try {
+      $object = $client->__soapCAll('getDatastreamDissemination', array('parameters' => $params));
+    } catch (Exception $e) {
+      return array();
+    }
+    $xml = trim($object->dissemination->stream);
   }
 
   /**
