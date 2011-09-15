@@ -12,7 +12,13 @@
  * Implementation of hook_install.
  */
 function islandora_content_model_forms_install() {
+  module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
   drupal_install_schema('islandora_content_model_forms');
+  if (!XMLFormDatabase::Exists('default')) {
+    $definition = new DOMDocument();
+    $definition->load(drupal_get_path('module', 'islandora_content_model_forms') . '/data/definitions/oai_dc_basic.xml');
+    XMLFormDatabase::Create('default', $definition);
+  }
 }
 
 /**

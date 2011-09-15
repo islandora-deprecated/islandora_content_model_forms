@@ -104,21 +104,7 @@ class IngestObjectMetadataForm {
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
-    $xml_form = new XMLForm($form_state);
-    if (!$xml_form->isInitialized()) {
-      module_load_include('inc', 'xml_form_api', 'XMLFormDefinition');
-      module_load_include('inc', 'xml_form_builder', 'FormBuilder');
-      $form_name = $form_state['values']['forms'];
-      $definition = FormBuilder::GetFormDefinition($form_name);
-      $form = XMLFormDefinition::GetDrupalForm($definition);
-      $properties = XMLFormDefinition::GetFormProperties($definition);
-      $xml = islandora_content_model_get_template($content_model_pid, $form_name);
-      $namespaces = new Namespaces($properties['namespaces'], $properties['default_uri']);
-      $document = new XMLDocument($properties['root_name'], $namespaces, $properties['schema_uri'], $xml);
-      $xml_form->initialize($form, $document);
-    }
-    $form = $xml_form->toArray($form_state);
-
+    $form = xml_form_builder_get_form($form_state, $form_name);
     $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
