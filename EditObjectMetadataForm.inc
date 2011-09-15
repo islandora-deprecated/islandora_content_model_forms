@@ -86,13 +86,13 @@ class EditObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($pid, $client, array &$form_state) {
-    $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
-    $xml = $this->getMetadata($pid, $dsid);
-    $form = xml_form_builder_get_form($form_state, $form_name, $xml);
-    // Set the object label
     $content_model = ContentModel::loadFromObject($pid);
     $content_model_pid = $content_model->pid;
     $form_name = $form_state['values']['forms'];
+    $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
+    $xml = $this->getMetadata($pid, $dsid, $client);
+    $form = xml_form_builder_get_form($form_state, $form_name, $xml);
+    // Set the object label
     $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
     eval('$label_is_set = isset($form_state[\'values\']' . $label_field . ');');
     if ($label_is_set) {
@@ -123,7 +123,7 @@ class EditObjectMetadataForm {
     return $form;
   }
 
-  private function getMetadata($pid, $dsid) {
+  private function getMetadata($pid, $dsid, $client) {
     $params = array('pid' => $pid, 'dsID' => $dsid, 'asOfDateTime' => "");
     try {
       $object = $client->__soapCAll('getDatastreamDissemination', array('parameters' => $params));
