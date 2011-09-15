@@ -99,6 +99,8 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
+    $path = drupal_get_path('module', 'islandora_content_model_forms');
+    drupal_add_js("$path/js/fix-jquery-update.js", 'theme'); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
@@ -178,7 +180,7 @@ class IngestObjectMetadataForm {
    */
   public function submit(array &$form, array &$form_state) {
     global $base_url;
-    if (isset($_FILES['files']) && $_FILES['files']['name']['file_upload'] && $_FILES['files']['name']['file_upload'] == 'text/xml') {
+    if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['name']['file_upload'] == 'text/xml') {
       $tmpDir = file_directory_path();
       if (!$file = file_save_upload('file_upload', NULL, $tmpDir)) {
         drupal_set_message('No file loaded', 'warning');
@@ -192,7 +194,6 @@ class IngestObjectMetadataForm {
         drupal_set_message('This does not appear to be a valid XML file', 'warning');
         return;
       }
-
     }
     else {
       $xml_form = new XMLForm($form_state);
@@ -220,6 +221,7 @@ class IngestObjectMetadataForm {
       }
       $pid = $collection_policy->getNextPid($content_model_dsid);
       $ingest_file_location = isset($form_state['values']['ingest-file-location']) ? $form_state['values']['ingest-file-location'] : NULL;
+      $ingest_file_location = is_array($ingest_file_location) ? $ingest_file_location : array($ingest_file_location);
       $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
       $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
       $foxml = new FOXML($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
