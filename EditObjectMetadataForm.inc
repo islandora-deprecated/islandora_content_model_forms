@@ -86,21 +86,9 @@ class EditObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($pid, $client, array &$form_state) {
-    $xml_form = new XMLForm($form_state);
-    if (!$xml_form->isInitialized()) {
-      module_load_include('inc', 'xml_form_api', 'XMLFormDefinition');
-      module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
-      $content_model = ContentModel::loadFromObject($pid);
-      $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
-      $xml = $this->getMetadata($pid, $dsid);
-      $form_name = $form_state['values']['forms'];
-      $definition = XMLFormDatabase::Get($form_name);
-      $definition = new XMLFormDefinition($definition);
-      $form = $definition->getForm();
-      $document = $definition->createXMLDocument($xml);
-      $xml_form->initialize($form, $document);
-    }
-    $output = $xml_form->toArray($form_state);
+    $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
+    $xml = $this->getMetadata($pid, $dsid);
+    $form = xml_form_builder_get_form($form_state, $form_name, $xml);
     // Set the object label
     $content_model = ContentModel::loadFromObject($pid);
     $content_model_pid = $content_model->pid;
@@ -109,30 +97,30 @@ class EditObjectMetadataForm {
     eval('$label_is_set = isset($form_state[\'values\']' . $label_field . ');');
     if ($label_is_set) {
       eval('$label = $form_state[\'values\']' . $label_field . ';');
-      eval('$output' . $label_field . '[\'#default_value\'] = $label;');
+      eval('$form' . $label_field . '[\'#default_value\'] = $label;');
     }
     else {
       $object = new Fedora_Item($pid);
       $label = $object->objectProfile->objLabel;
-      eval('$output' . $label_field . '[\'#default_value\'] = $label;');
+      eval('$form' . $label_field . '[\'#default_value\'] = $label;');
     }
-    $output['forms'] = array(
+    $form['forms'] = array(
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms'],
     );
-    $output['content_model_pid'] = array(
+    $form['content_model_pid'] = array(
       '#type' => 'hidden',
       '#value' => $content_model_pid,
     );
-    $output['pid'] = array(
+    $form['pid'] = array(
       '#type' => 'hidden',
       '#value' => $pid,
     );
-    $output['dsid'] = array(
+    $form['dsid'] = array(
       '#type' => 'hidden',
       '#value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : $dsid,
     );
-    return $output;
+    return $form;
   }
 
   private function getMetadata($pid, $dsid) {
