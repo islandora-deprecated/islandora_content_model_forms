@@ -160,9 +160,7 @@ class FOXML extends DOMDocument {
       return;
 
     foreach ($this->ingestFileLocations as $dsid => $file) {
-vvvvvvvvvvvvvvvvvvvv
       $dsid = fix_dsid($dsid);
-^^^^^^^^^^^^^^^^^^^^
       list($label, $mime_type, $file_url) = $this->getFileAttributes($file);
       $datastream = $this->createDatastreamElement($dsid, 'A', 'M');
       $version = $this->createDatastreamVersionElement($dsid . '.0', $label, $mime_type);
