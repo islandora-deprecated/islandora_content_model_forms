@@ -64,7 +64,7 @@ class EditObjectMetadataForm {
           '#type' => 'select',
           '#title' => t('Forms'),
           '#options' => $form_names,
-          '#description' => t('Select the form to populate the metadata of the new object.')
+          '#description' => t('Select the form to edit.')
         )
       ),
       'submit' => array(
