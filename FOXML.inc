@@ -396,6 +396,7 @@ class FOXML extends DOMDocument {
     $ret = FALSE;
     try {
       $object = Fedora_Item::ingest_from_FOXML($this);
+
       if (!empty($object->pid)) {
         drupal_set_message(t("Item !pid created successfully.", array('!pid' => l($object->pid, 'fedora/repository/' . $object->pid))), "status");
         $ret = TRUE;
