@@ -208,7 +208,12 @@ class IngestObjectMetadataForm {
       }
       $pid = $collection_policy->getNextPid($content_model_dsid);
       $ingest_file_location = isset($form_state['values']['ingest-file-location']) ? $form_state['values']['ingest-file-location'] : NULL;
+
       $ingest_file_location = is_array($ingest_file_location) ? $ingest_file_location : array($ingest_file_location);
+      foreach($_SESSION['fedora_ingest_files'] as $key => $value){
+        $ingest_file_location[$key]=$value;
+      }
+      
       $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
       $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
       $foxml = new FOXML($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
