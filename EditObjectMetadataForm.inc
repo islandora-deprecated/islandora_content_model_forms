@@ -130,7 +130,7 @@ class EditObjectMetadataForm {
     } catch (Exception $e) {
       return array();
     }
-    $xml = trim($object->dissemination->stream);
+    return trim($object->dissemination->stream);
   }
 
   /**
