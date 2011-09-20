@@ -207,10 +207,13 @@ class IngestObjectMetadataForm {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
       $pid = $collection_policy->getNextPid($content_model_dsid);
-      $ingest_file_location = isset($form_state['values']['ingest-file-location']) ? $form_state['values']['ingest-file-location'] : NULL;
-
-      $ingest_file_location = is_array($ingest_file_location) ? $ingest_file_location : array($ingest_file_location);
-      if (is_array($_SESSION['fedora_ingest_files'])) {
+      
+      $uploaded_file = isset($form_state['values']['ingest-file-location']) && trim($form_state['values']['ingest-file-location']) !== '';
+      $ingest_file_location = $uploaded_file ? $form_state['values']['ingest-file-location'] : NULL;
+      if (isset($ingest_file_location)) {
+        $ingest_file_location = is_array($ingest_file_location) ? $ingest_file_location : array('OBJ' => $ingest_file_location);
+      }
+      if (isset($_SESSION['fedora_ingest_files']) && is_array($_SESSION['fedora_ingest_files'])) {
         foreach ($_SESSION['fedora_ingest_files'] as $key => $value) {
           $ingest_file_location[$key] = $value;
         }

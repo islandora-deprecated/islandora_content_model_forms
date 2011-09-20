@@ -156,9 +156,8 @@ class FOXML extends DOMDocument {
 
   private function createIngestFileDatastreams() {
     module_load_include('inc', 'fedora_repository', 'api/fedora_util');
-    if (empty($this->ingestFileLocations))
+    if (empty($this->ingestFileLocations) || count($this->ingestFileLocations) === 0)
       return;
-
     foreach ($this->ingestFileLocations as $dsid => $file) {
       $dsid = fix_dsid($dsid);
       list($label, $mime_type, $file_url) = $this->getFileAttributes($file);
