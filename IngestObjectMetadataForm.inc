@@ -100,7 +100,7 @@ class IngestObjectMetadataForm {
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
     $path = drupal_get_path('module', 'islandora_content_model_forms');
-    drupal_add_js("$path/js/fix-jquery-update.js", 'theme'); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
+    //drupal_add_js("$path/js/fix-jquery-update.js", 'theme'); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
