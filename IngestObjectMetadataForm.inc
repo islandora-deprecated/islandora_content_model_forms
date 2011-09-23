@@ -207,6 +207,7 @@ class IngestObjectMetadataForm {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
       $pid = $collection_policy->getNextPid($content_model_dsid);
+      $form_state['values']['pid'] = $pid;
       
       $uploaded_file = isset($form_state['values']['ingest-file-location']) && trim($form_state['values']['ingest-file-location']) !== '';
       $ingest_file_location = $uploaded_file ? $form_state['values']['ingest-file-location'] : NULL;
