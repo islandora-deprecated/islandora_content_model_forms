@@ -348,7 +348,7 @@ function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   // @todo find an alternative solution to array filter because of earlier versions 5.2
   $output = array_filter($content_models, new AutoCompleteFilter($string));
-  $output[$string] = $string; 
+  $output[$string] = $string;
   return drupal_json($output);
 }
 
@@ -358,10 +358,11 @@ function islandora_content_model_forms_autocomplete($string) {
  * @return array 
  */
 function islandora_content_model_get_form_names($content_model) {
+  module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}');
   while ($data = db_fetch_object($result)) {
-    if ($data->content_model == $content_model) {
+    if ($data->content_model == $content_model && XMLFormDatabase::Valid($data->form_name)) {
       $list[$data->form_name] = "{$data->form_name}: ({$data->dsid})";
     }
   }
