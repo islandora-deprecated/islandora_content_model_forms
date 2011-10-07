@@ -125,8 +125,8 @@ function islandora_content_model_forms_list_form(array &$form_state) {
   $transforms = islandora_content_model_forms_get_transforms();
   $path = drupal_get_path('module', 'islandora_content_model_forms');
   drupal_add_js("$path/js/fix-jquery-update.js", 'theme'); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
-  if (count($form_names) == 0 || count($content_models) == 0) {
-    drupal_set_message('Both forms and content models must be defined to add new associations.', 'error');
+  if(count($form_names) == 0) {
+    drupal_set_message('No forms defined, both forms and content models must be defined to add new associations.', 'error');
     return;
   }
   $form_name = isset($form_state['values']['name']) ?
