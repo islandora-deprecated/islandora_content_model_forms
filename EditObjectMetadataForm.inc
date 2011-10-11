@@ -6,8 +6,8 @@
  * @file
  *
  */
-module_load_include('inc', 'fedora_repository', 'api/fedora_item');
-module_load_include('inc', 'fedora_repository', 'ContentModel');
+module_load_include('inc', 'islandora_repository', 'api/fedora_item');
+module_load_include('inc', 'islandora_repository', 'ContentModel');
 module_load_include('inc', 'xml_form_api', 'XMLForm');
 
 /**
@@ -69,7 +69,7 @@ class EditObjectMetadataForm {
       ),
       'submit' => array(
         '#type' => 'submit',
-        '#submit' => array('fedora_repository_edit_qdc_form_submit'),
+        '#submit' => array('islandora_repository_edit_qdc_form_submit'),
         '#value' => 'Next'
       )
     );

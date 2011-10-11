@@ -155,7 +155,7 @@ class FOXML extends DOMDocument {
   }
 
   private function createIngestFileDatastreams() {
-    module_load_include('inc', 'fedora_repository', 'api/fedora_util');
+    module_load_include('inc', 'islandora_repository', 'api/fedora_util');
     if (empty($this->ingestFileLocations) || count($this->ingestFileLocations) === 0)
       return;
     foreach ($this->ingestFileLocations as $dsid => $file) {
@@ -170,8 +170,8 @@ class FOXML extends DOMDocument {
 
   private function getFileAttributes($file) {
     global $base_url;
-    module_load_include('inc', 'fedora_repository', 'MimeClass');
-    module_load_include('inc', 'fedora_repository', 'api/fedora_util');
+    module_load_include('inc', 'islandora_repository', 'MimeClass');
+    module_load_include('inc', 'islandora_repository', 'api/fedora_util');
     $mime = new MimeClass();
     $mime_type = $mime->getType($file);
     $parts = explode('/', $file);
@@ -202,7 +202,7 @@ class FOXML extends DOMDocument {
    * @return DOMElement
    */
   private function getPolicyStreamElement() {
-    module_load_include('inc', 'fedora_repository', 'ObjectHelper');
+    module_load_include('inc', 'islandora_repository', 'ObjectHelper');
     $object_helper = new ObjectHelper();
     $policy_stream = $object_helper->getStream($this->collectionPid, 'CHILD_SECURITY', FALSE);
     if (!isset($policy_stream)) {
@@ -238,7 +238,7 @@ class FOXML extends DOMDocument {
    * @return DOMElement
    */
   private function createCollectionPolicy() {
-    module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+    module_load_include('inc', 'islandora_repository', 'api/fedora_item');
     $fedora_item = new fedora_item($this->contentModelPid);
     $datastreams = $fedora_item->get_datastreams_list_as_array();
     if (isset($datastreams['COLLECTION_POLICY_TMPL'])) {
@@ -309,7 +309,7 @@ class FOXML extends DOMDocument {
    * @return DOMElement
    */
   private function createWorkflowStream() {
-    module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+    module_load_include('inc', 'islandora_repository', 'api/fedora_item');
     $fedora_item = new fedora_item($this->contentModelPid);
     $datastreams = $fedora_item->get_datastreams_list_as_array();
     if (isset($datastreams['WORKFLOW_TMPL'])) {

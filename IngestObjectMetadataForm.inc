@@ -6,9 +6,9 @@
  * @file
  *
  */
-module_load_include('inc', 'fedora_repository', 'api/fedora_item');
-module_load_include('inc', 'fedora_repository', 'ContentModel');
-module_load_include('inc', 'fedora_repository', 'CollectionPolicy');
+module_load_include('inc', 'islandora_repository', 'api/fedora_item');
+module_load_include('inc', 'islandora_repository', 'ContentModel');
+module_load_include('inc', 'islandora_repository', 'CollectionPolicy');
 module_load_include('inc', 'xml_form_api', 'XMLForm');
 
 /**
@@ -83,7 +83,7 @@ class IngestObjectMetadataForm {
       ),
       'submit' => array(
         '#type' => 'submit',
-        '#submit' => array('fedora_repository_ingest_form_submit'),
+        '#submit' => array('islandora_repository_ingest_form_submit'),
         '#value' => t('Next')
       ),
     );
