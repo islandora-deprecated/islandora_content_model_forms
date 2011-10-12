@@ -146,7 +146,7 @@ class IngestObjectMetadataForm {
   public function create($collection_pid, $collection_label, array &$form_state) {
     $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
     if ($page == 1) {
-      $form_state['storage']['xml'] = true;
+      $form_state['storage']['xml'] = TRUE;
       return $this->createPageOne($collection_pid, $collection_label, $form_state);
     }
     else if ($form_state['storage']['xml']) {
