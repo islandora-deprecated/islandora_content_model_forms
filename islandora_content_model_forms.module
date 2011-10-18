@@ -1,6 +1,6 @@
 <?php
 
-// $Id$
+
 
 /**
  * @file
@@ -140,7 +140,7 @@ function islandora_content_model_forms_list_form(array &$form_state) {
       'content_model' => array(
         '#type' => 'textfield',
         '#title' => 'Content Model',
-        '#required' => true,
+        '#required' => TRUE,
         '#autocomplete_path' => 'admin/content/model/forms/autocomplete',
         '#description' => 'The content model to associate with a form.<br/> If the content model has no decendants it will not show up in autocomplete.',
         '#default_value' => isset($form_state['values']['content_model']) ? $form_state['values']['content_model'] : NULL,
@@ -310,8 +310,8 @@ function islandora_content_model_forms_get_transforms() {
   $transforms = array();
   $include_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms";
   $dir = opendir($include_path);
-  if ($dir !== false) {
-    while (($file = readdir($dir)) !== false) {
+  if ($dir !== FALSE) {
+    while (($file = readdir($dir)) !== FALSE) {
       if (preg_match('/\.xslt?$/', $file)) {
         $transforms[$file] = $file;
       }
@@ -504,7 +504,7 @@ function islandora_content_model_forms_ahah() {
   $form_build_id = $_REQUEST['form_build_id'];
   $form_state = array('storage' => NULL, 'submitted' => FALSE, 'post' => $_POST);
   if (!$form = form_get_cache($form_build_id, $form_state)) {
-    header("HTTP/1.0 200 OK", false, 200);
+    header("HTTP/1.0 200 OK", FALSE, 200);
     exit();
   }
   $form_id = array_shift($form['#parameters']);

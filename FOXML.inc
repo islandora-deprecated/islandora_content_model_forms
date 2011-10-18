@@ -1,6 +1,6 @@
 <?php
 
-// $Id$
+
 
 /**
  * @file
@@ -212,7 +212,7 @@ class FOXML extends DOMDocument {
       $xml = new SimpleXMLElement($policy_stream);
     } catch (Exception $exception) {
       watchdog(t("Fedora_Repository"), t("Problem getting security policy."), NULL, WATCHDOG_ERROR);
-      drupal_set_message(t('Problem getting security policy: !e', array('!e' => $exception->getMessage())), 'error');
+      drupal_set_message(t('Problem getting security policy: @e', array('@e' => $exception->getMessage())), 'error');
       return FALSE;
     }
     $policy_element = $this->createDocumentFragment();
@@ -406,8 +406,8 @@ class FOXML extends DOMDocument {
         }
       }
     } catch (exception $exception) {
-      drupal_set_message(t('Error ingesting object: !e', array('!e' => $exception->getMessage())), 'error');
-      watchdog(t("Fedora_Repository"), t("Error ingesting object: !e", array('!e' => $exception->getMessage())), NULL, WATCHDOG_ERROR);
+      drupal_set_message(t('Error ingesting object: @e', array('@e' => $exception->getMessage())), 'error');
+      watchdog(t("Fedora_Repository"), t("Error ingesting object: @e', array('@e' => $exception->getMessage())), NULL, WATCHDOG_ERROR);
       // TODO is this necessary?
       foreach ($this->ingestFileLocations as $file)
         file_delete($file);
