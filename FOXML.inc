@@ -351,7 +351,7 @@ class FOXML extends DOMDocument {
    */
   private function createDublinCoreDatastream() {
     $datastream = $this->createDatastreamElement('DC', 'A', 'X');
-    $version = $this->createDatastreamVersionElement('DC.0', 'Dublic Core Record', 'text/xml');
+    $version = $this->createDatastreamVersionElement('DC.0', 'Dublin Core Record', 'text/xml');
     $content = $this->createDatastreamContentElement();
     $dublin_core = $this->applyTransformation();
     if (isset($dublin_core)) {

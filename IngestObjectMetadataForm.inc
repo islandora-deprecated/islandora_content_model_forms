@@ -208,7 +208,18 @@ class IngestObjectMetadataForm {
       }
       $pid = $collection_policy->getNextPid($content_model_dsid);
       $form_state['values']['pid'] = $pid;
-      
+      // added ne functionality to static thumbnails to objects if values are provided in MODS forms.
+      $module = $form_state['values']['module'];
+      $image_dir = $form_state['values']['image_directory'];
+      $thumbnail_file = $form_state['values']['thumbnail_file'];
+      if ($module && $image_dir && $thumbnail_file) {
+        $stored_thumbnail = drupal_get_path('module', $module) . "/$image_dir/$thumbnail_file";
+        $stored_thumbnail = preg_replace('/\/\//', '/', $stored_thumbnail);
+        file_copy($stored_thumbnail, file_directory_path());
+        $thumbnail = file_directory_path() . '/' . $thumbnail_file;
+        $_SESSION['fedora_ingest_files']["TN"] = $thumbnail;
+      }
+
       $uploaded_file = isset($form_state['values']['ingest-file-location']) && trim($form_state['values']['ingest-file-location']) !== '';
       $ingest_file_location = $uploaded_file ? $form_state['values']['ingest-file-location'] : NULL;
       if (isset($ingest_file_location)) {
@@ -219,6 +230,8 @@ class IngestObjectMetadataForm {
           $ingest_file_location[$key] = $value;
         }
       }
+
+
       $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
       $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
       $foxml = new FOXML($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
