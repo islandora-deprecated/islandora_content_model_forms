@@ -53,7 +53,7 @@ class FOXML extends DOMDocument {
     parent::__construct("1.0", "UTF-8"); // DomDocument
     $this->formatOutput = TRUE;
     $this->preserveWhiteSpace = FALSE;
-    $this->label = $label;
+    $this->label = substr($label, 0, 255);
     $this->user = $user->name;
     $this->pid = $pid;
     $this->dsid = $dsid;
