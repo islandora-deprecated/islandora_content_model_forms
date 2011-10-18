@@ -1,6 +1,6 @@
 <?php
 
-// $Id$
+
 
 /**
  * @file
@@ -39,43 +39,43 @@ function islandora_content_model_forms_schema() {
     'fields' => array(
       'id' => array(
         'type' => 'serial',
-        'not null' => TRUE,
+        'not NULL' => TRUE,
       ),
       'content_model' => array(
         'description' => t('The name of the content model.'),
         'type' => 'varchar',
         'length' => 128,
-        'not null' => TRUE
+        'not NULL' => TRUE
       ),
       'form_name' => array(
         'description' => t('The name of the stored form.'),
         'type' => 'varchar',
         'length' => 128,
-        'not null' => TRUE
+        'not NULL' => TRUE
       ),
       'dsid' => array(
         'description' => t('The datastream id of the metadata to be edited.'),
         'type' => 'varchar',
         'length' => 128,
-        'not null' => TRUE
+        'not NULL' => TRUE
       ),
       'title_field' => array(
         'description' => t('The form field that you want to use for the objects label.'),
         'type' => 'varchar',
         'length' => 128,
-        'not null' => TRUE
+        'not NULL' => TRUE
       ),
       'transform' => array(
         'description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
         'type' => 'varchar',
         'length' => 128,
-        'not null' => TRUE
+        'not NULL' => TRUE
       ),
       'template' => array(
         'description' => t('A sample metadata file used to prepopulate the form on ingest.'),
         'type' => 'text',
         'size' => 'medium',
-        'not null' => TRUE
+        'not NULL' => TRUE
       ),
     ),
     'primary key' => array('id'),
