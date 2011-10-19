@@ -208,11 +208,12 @@ class IngestObjectMetadataForm {
       }
       $pid = $collection_policy->getNextPid($content_model_dsid);
       $form_state['values']['pid'] = $pid;
-      // added ne functionality to static thumbnails to objects if values are provided in MODS forms.
-      $module = $form_state['values']['module'];
-      $image_dir = $form_state['values']['image_directory'];
-      $thumbnail_file = $form_state['values']['thumbnail_file'];
-      if ($module && $image_dir && $thumbnail_file) {
+      // added ne functionality to static thumbnails to objects if values are provided in MODS forms
+      $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
+      $image_dir = isset($form_state['values']['image_directory']) ? $form_state['values']['image_directory'] : NULL;
+      $thumbnail_file = isset($form_state['values']['thumbnail_file']) ? $form_state['values']['thumbnail_file'] : NULL;
+
+      if ($module && $thumbnail_file) {
         $stored_thumbnail = drupal_get_path('module', $module) . "/$image_dir/$thumbnail_file";
         $stored_thumbnail = preg_replace('/\/\//', '/', $stored_thumbnail);
         file_copy($stored_thumbnail, file_directory_path());
