@@ -407,7 +407,7 @@ class FOXML extends DOMDocument {
       }
     } catch (exception $exception) {
       drupal_set_message(t('Error ingesting object: @e', array('@e' => $exception->getMessage())), 'error');
-      watchdog(t("Fedora_Repository"), t("Error ingesting object: @e', array('@e' => $exception->getMessage())), NULL, WATCHDOG_ERROR);
+      watchdog(t("Fedora_Repository"), t("Error ingesting object: @e", array('@e' => $exception->getMessage())), NULL, WATCHDOG_ERROR);
       // TODO is this necessary?
       foreach ($this->ingestFileLocations as $file)
         file_delete($file);
