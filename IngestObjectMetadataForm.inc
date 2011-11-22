@@ -48,9 +48,6 @@ class IngestObjectMetadataForm {
    *
    * @return array
    */
-
-
-
   // this code contains a temporary fix and should be replaced as soon as a more permananent solution is developed
   // currently if a collection has more than one content model listed in the collection policy the user
   // will only have access to the first form associated with the content type.
@@ -61,47 +58,67 @@ class IngestObjectMetadataForm {
     $count = count($potential_models);
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
-    if ($form_state['post']['models']){
+    if ($form_state['post']['models']) {
       $identifier = $form_state['post']['models'];
     }
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
-    if (empty($form_names)) {
+    /**
+      if (empty($form_names)) {
       throw new Exception('Couldn\'t Create Page One of the Ingest Form.');
-    }
+      }
+     * */
+    $form = array();
 
-    $items = array();
-    $items['indicator'] = array(
+    $form['indicator'] = array(
       '#type' => 'fieldset',
       '#title' => t('Ingest digital object into collection_pid !collection_label Step #1', array('collection_pid' => $collection_pid, '!collection_label' => $collection_label)),
     );
 
-    $items['indicator']['models'] = array(
+    $form['indicator']['models'] = array(
       '#type' => 'select',
       '#title' => t('Content models available'),
       '#options' => $potential_models,
       '#default_value' => $selected_model,
       '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a> '),
+      '#ahah' => array(
+        'path' => 'islandora/form/update',
+        'wrapper' => 'content-form-choice',
+        'effect' => 'fade',
+      ),
     );
-    if ($count < 2) {
-      $items['indicator']['forms'] = array(
+
+    $form['indicator']['content_form_ahah_wrapper'] = array(
+      '#prefix' => '<div id="content-form-choice">',
+      '#suffix' => '</div>',
+      '#type' => 'item',
+    );
+
+    if (count($form_names) > 0) {
+      $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
         '#type' => 'select',
         '#title' => t('Select form'),
         '#options' => $form_names,
-        '#description' => t('Select the form to populate the metadata of the new object.')
+        '#description' => t('Select the form to populate the metadata of the new object.'),
       );
     }
-    $items['collection_pid'] = array(
+    if (count($form_names) == 1) {
+      $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
+        '#type' => 'hidden',
+        '#value' => $form_names[0],
+      );
+    }
+    $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
     );
-    $items['submit'] = array(
+    $form['submit'] = array(
       '#type' => 'submit',
       '#submit' => array('fedora_repository_ingest_form_submit'),
       '#value' => t('Next'),
     );
 
-    return $items;
+    return $form;
   }
 
   /**
@@ -114,6 +131,7 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
+    module_load_include('inc', 'fedora_repository', 'formClass');
     $path = drupal_get_path('module', 'islandora_content_model_forms');
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
@@ -127,7 +145,12 @@ class IngestObjectMetadataForm {
       $form_name = key($form_names);
       $form_state['values']['forms'] = $form_name;
     }
-
+    if (!isset($form_name)) {
+      $ingestForm = new formClass();
+      $form_state['storage']['content_model'] = $content_model;
+      $form_state['storage']['collection_pid'] = $collection_pid;
+      return $ingestForm->createQDCIngestForm($collection_pid, $collection_label, $form_state);
+    }
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
     $form = xml_form_builder_get_form($form_state, $form_name);
     $form['collection_pid'] = array(
@@ -269,3 +292,25 @@ class IngestObjectMetadataForm {
 
 }
 
+function islandora_content_model_update_form_choice() {
+  // prep only
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  // Enable the submit/validate handlers to determine whether AHAH-submittted.
+  $form_state['ahah_submission'] = TRUE;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+
+  $changed_elements = $form['indicator']['content_form_ahah_wrapper'];
+  unset($changed_elements['#prefix'], $changed_elements['#suffix']);
+  $output = theme('status_messages') . drupal_render($changed_elements);
+  drupal_json(array(
+    'status' => TRUE,
+    'data' => $output,
+  ));
+}
