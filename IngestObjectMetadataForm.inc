@@ -1,7 +1,5 @@
 <?php
 
-
-
 /**
  * @file
  *
@@ -50,43 +48,60 @@ class IngestObjectMetadataForm {
    *
    * @return array
    */
+
+
+
+  // this code contains a temporary fix and should be replaced as soon as a more permananent solution is developed
+  // currently if a collection has more than one content model listed in the collection policy the user
+  // will only have access to the first form associated with the content type.
+
+
   public function createPageOne($collection_pid, $collection_label, array &$form_state) {
     $potential_models = $this->getPotentialContentModels($collection_pid);
+    $count = count($potential_models);
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
+    if ($form_state['post']['models']){
+      $identifier = $form_state['post']['models'];
+    }
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
     if (empty($form_names)) {
       throw new Exception('Couldn\'t Create Page One of the Ingest Form.');
     }
-    return array(
-      'indicator' => array(
-        '#type' => 'fieldset',
-        '#title' => t('Ingest digital object into collection_pid !collection_label Step #1', array('collection_pid' => $collection_pid, '!collection_label' => $collection_label)),
-        'models' => array(
-          '#type' => 'select',
-          '#title' => t('Content models available'),
-          '#options' => $potential_models,
-          '#default_value' => $selected_model,
-          '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a> '),
-        ),
-        'forms' => array(
-          '#type' => 'select',
-          '#title' => t('Select form'),
-          '#options' => $form_names,
-          '#description' => t('Select the form to populate the metadata of the new object.')
-        ),
-      ),
-      'collection_pid' => array(
-        '#type' => 'hidden',
-        '#value' => $collection_pid
-      ),
-      'submit' => array(
-        '#type' => 'submit',
-        '#submit' => array('fedora_repository_ingest_form_submit'),
-        '#value' => t('Next')
-      ),
+
+    $items = array();
+    $items['indicator'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Ingest digital object into collection_pid !collection_label Step #1', array('collection_pid' => $collection_pid, '!collection_label' => $collection_label)),
     );
+
+    $items['indicator']['models'] = array(
+      '#type' => 'select',
+      '#title' => t('Content models available'),
+      '#options' => $potential_models,
+      '#default_value' => $selected_model,
+      '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a> '),
+    );
+    if ($count < 2) {
+      $items['indicator']['forms'] = array(
+        '#type' => 'select',
+        '#title' => t('Select form'),
+        '#options' => $form_names,
+        '#description' => t('Select the form to populate the metadata of the new object.')
+      );
+    }
+    $items['collection_pid'] = array(
+      '#type' => 'hidden',
+      '#value' => $collection_pid
+    );
+    $items['submit'] = array(
+      '#type' => 'submit',
+      '#submit' => array('fedora_repository_ingest_form_submit'),
+      '#value' => t('Next'),
+    );
+
+    return $items;
   }
 
   /**
@@ -100,11 +115,20 @@ class IngestObjectMetadataForm {
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
     $path = drupal_get_path('module', 'islandora_content_model_forms');
-    //drupal_add_js("$path/js/fix-jquery-update.js", 'theme'); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
+
+    if (isset($form_state['values']['forms'])) {
+      $form_name = $form_state['values']['forms'];
+    }
+    else {
+      $form_names = islandora_content_model_get_form_names($content_model_pid);
+      reset($form_names);
+      $form_name = key($form_names);
+      $form_state['values']['forms'] = $form_name;
+    }
+
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
-    $form_name = $form_state['values']['forms'];
     $form = xml_form_builder_get_form($form_state, $form_name);
     $form['collection_pid'] = array(
       '#type' => 'hidden',
