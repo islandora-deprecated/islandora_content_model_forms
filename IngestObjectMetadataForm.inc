@@ -256,7 +256,7 @@ class IngestObjectMetadataForm {
       else {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
-      $pid = $collection_policy->getNextPid($content_model_dsid);
+      $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);      
       $form_state['values']['pid'] = $pid;
       // added ne functionality to static thumbnails to objects if values are provided in MODS forms
       $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
