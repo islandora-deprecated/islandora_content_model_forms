@@ -53,6 +53,7 @@ class IngestObjectMetadataForm {
 
   public function createPageOne($collection_pid, $collection_label, array &$form_state) {
     $potential_models = $this->getPotentialContentModels($collection_pid);
+    unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
     if ($form_state['post']['models']) {
@@ -60,7 +61,6 @@ class IngestObjectMetadataForm {
     }
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
-    unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
     if (count($potential_models) == 0) {
       $message = "Please got to <strong>Manage This Collection</strong> tab add content models to this collection policy or child collections to this collection";
 
