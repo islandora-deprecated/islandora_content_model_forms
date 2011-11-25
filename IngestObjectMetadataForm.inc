@@ -23,12 +23,10 @@ class IngestObjectMetadataForm {
    */
   public function getPotentialContentModels($collection_pid) {
     if (($collection_policy = CollectionPolicy::loadFromCollection($collection_pid)) === FALSE) {
-      drupal_set_message(t('Unable to load collection policy \'' . $collection_pid . '\'.'));
-      return FALSE;
+      return array();
     }
     if (!($content_models = $collection_policy->getContentModels())) {
-      drupal_set_message(t('No content models associated with this collection: !collection_pid. Please contact your administrator.', array('!collection_pid' => $collection_pid)), 'error');
-      return FALSE;
+      return array();
     }
     $potential_models = array();
     foreach ($content_models as $content_model) {
@@ -55,7 +53,7 @@ class IngestObjectMetadataForm {
 
   public function createPageOne($collection_pid, $collection_label, array &$form_state) {
     $potential_models = $this->getPotentialContentModels($collection_pid);
-    $count = count($potential_models);
+    unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
     if ($form_state['post']['models']) {
@@ -63,11 +61,16 @@ class IngestObjectMetadataForm {
     }
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
-    /**
-      if (empty($form_names)) {
-      throw new Exception('Couldn\'t Create Page One of the Ingest Form.');
-      }
-     * */
+    if (count($potential_models) == 0) {
+      $message = "Please got to <strong>Manage This Collection</strong> tab add content models to this collection policy or child collections to this collection";
+
+      $form['message'] = array(
+        '#type' => 'item',
+        '#value' => $message,
+      );
+      return $form;
+    }
+
     $form = array();
 
     $form['indicator'] = array(
@@ -253,7 +256,7 @@ class IngestObjectMetadataForm {
       else {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
-      $pid = $collection_policy->getNextPid($content_model_dsid);
+      $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);      
       $form_state['values']['pid'] = $pid;
       // added ne functionality to static thumbnails to objects if values are provided in MODS forms
       $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
