@@ -62,7 +62,7 @@ class IngestObjectMetadataForm {
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
     if (count($potential_models) == 0) {
-      $message = "Please got to <strong>Manage This Collection</strong> tab add content models to this collection policy or child collections to this collection";
+      $message = "Select the <strong>Manage This Collection</strong> tab to add content models or child collections to this collection";
 
       $form['message'] = array(
         '#type' => 'item',
