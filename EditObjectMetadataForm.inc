@@ -216,10 +216,10 @@ class EditObjectMetadataForm {
     $xpath = new DOMXPath($dublin_core);
     // Set the Label
     $results = $xpath->query("*[local-name()='title']");
-    $results->item(0)->nodeValue = $label;
+    $results->item(0)->nodeValue = htmlspecialchars(html_entity_decode($label, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8');
     // Set the Pid
     $results = $xpath->query("*[local-name()='identifier']");
-    $results->item(0)->nodeValue = $pid;
+    $results->item(0)->nodeValue = htmlspecialchars(html_entity_decode($pid, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8');
     $dublin_core->version = "1.0";
     $dublin_core->encoding = "UTF-8";
     $dublin_core->formatOutput = TRUE;
