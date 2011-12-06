@@ -92,18 +92,6 @@ class EditObjectMetadataForm {
     $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
     $xml = $this->getMetadata($pid, $dsid, $client);
     $form = xml_form_builder_get_form($form_state, $form_name, $xml);
-    // Set the object label
-    $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
-    eval('$label_is_set = isset($form_state[\'values\']' . $label_field . ');');
-    if ($label_is_set) {
-      eval('$label = $form_state[\'values\']' . $label_field . ';');
-      eval('$form' . $label_field . '[\'#default_value\'] = $label;');
-    }
-    else {
-      $object = new Fedora_Item($pid);
-      $label = $object->objectProfile->objLabel;
-      eval('$form' . $label_field . '[\'#default_value\'] = $label;');
-    }
     $form['forms'] = array(
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms'],
