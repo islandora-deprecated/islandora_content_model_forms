@@ -56,9 +56,7 @@ class IngestObjectMetadataForm {
     unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
-    if ($form_state['post']['models']) {
-      $identifier = $form_state['post']['models'];
-    }
+    $identifier = isset($form_state['post']['models']) ? $form_state['post']['models'] : $identifier;
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
     if (count($potential_models) == 0) {
@@ -108,7 +106,7 @@ class IngestObjectMetadataForm {
     if (count($form_names) == 1) {
       $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
         '#type' => 'hidden',
-        '#value' => $form_names[0],
+        '#value' => array_shift(array_keys($form_names))
       );
     }
     $form['collection_pid'] = array(
@@ -120,7 +118,6 @@ class IngestObjectMetadataForm {
       '#submit' => array('fedora_repository_ingest_form_submit'),
       '#value' => t('Next'),
     );
-
     return $form;
   }
 
@@ -256,7 +253,7 @@ class IngestObjectMetadataForm {
       else {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
-      $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);      
+      $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);
       $form_state['values']['pid'] = $pid;
       // added ne functionality to static thumbnails to objects if values are provided in MODS forms
       $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
