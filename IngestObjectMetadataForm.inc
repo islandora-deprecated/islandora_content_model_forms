@@ -59,9 +59,15 @@ class IngestObjectMetadataForm {
     $identifier = isset($form_state['post']['models']) ? $form_state['post']['models'] : $identifier;
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
+    $collection_link = l("Islandora Collection Manager", "https://github.com/Islandora/islandora_collection_manager");
     if (count($potential_models) == 0) {
-      $message = "Select the <strong>Manage This Collection</strong> tab to add content models or child collections to this collection";
-
+      if (module_exists('islandora_collection_manager')) {
+        $message = t("Select the <strong>Manage This Collection</strong> tab to add content models or child collections to this collection");
+      }
+      else {
+        $message = t("This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.<br />
+                      We strongly recommend the $collection_link module for managing collection objects.");
+      }
       $form['message'] = array(
         '#type' => 'item',
         '#value' => $message,
