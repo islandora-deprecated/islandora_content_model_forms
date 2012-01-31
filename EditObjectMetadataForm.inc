@@ -187,6 +187,10 @@ class EditObjectMetadataForm {
    * @param string $label 
    */
   private function setObjectLabel($pid, $label) {
+    // Because of FCREPO-1059 we need to make sure that any label we create doesn't
+    // contain any newlines. This is valid for at least version 3.5 of Fedora.
+    $label = str_replace(array("\r", "\r\n", "\n"), '', $label);
+
     $object = new Fedora_Item($pid);
     $object->modify_object($label); // Set the label
   }

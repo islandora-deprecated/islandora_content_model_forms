@@ -108,9 +108,13 @@ class FOXML extends DOMDocument {
     $property->setAttribute('VALUE', $this->state);
     $object_properties->appendChild($property);
 
+    // Because of FCREPO-1059 we need to make sure that any label we create doesn't
+    // contain any newlines. This is valid for at least version 3.5 of Fedora.
+    $label = str_replace(array("\r", "\r\n", "\n"), '', $this->label);
+
     $property = $this->createElementNS(self::foxml, 'foxml:property');
     $property->setAttribute('NAME', 'info:fedora/fedora-system:def/model#label');
-    $property->setAttribute('VALUE', $this->label);
+    $property->setAttribute('VALUE', $label);
     $object_properties->appendChild($property);
 
     $property = $this->createElementNS(self::foxml, 'foxml:property');
