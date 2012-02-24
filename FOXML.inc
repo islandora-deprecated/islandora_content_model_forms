@@ -70,6 +70,7 @@ class FOXML extends DOMDocument {
     $root = $this->createElementNS(self::foxml, 'foxml:digitalObject');
     $root->setAttribute('VERSION', '1.1');
     $root->setAttribute('PID', "{$this->pid}");
+    $root->setAttribute('xmlns', self::foxml);
     $root->setAttributeNS(self::xmlns, 'xmlns', self::foxml);
     $root->setAttributeNS(self::xmlns, 'xmlns:foxml', self::foxml);
     $root->setAttributeNS(self::xmlns, 'xmlns:xsi', self::xsi);
