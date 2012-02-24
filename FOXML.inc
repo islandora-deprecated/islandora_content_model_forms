@@ -71,7 +71,6 @@ class FOXML extends DOMDocument {
     $root->setAttribute('VERSION', '1.1');
     $root->setAttribute('PID', "{$this->pid}");
     $root->setAttribute('xmlns', self::foxml);
-    $root->setAttributeNS(self::xmlns, 'xmlns', self::foxml);
     $root->setAttributeNS(self::xmlns, 'xmlns:foxml', self::foxml);
     $root->setAttributeNS(self::xmlns, 'xmlns:xsi', self::xsi);
     $root->setAttributeNS(self::xsi, 'xsi:schemaLocation', self::foxml . " http://www.fedora.info/definitions/1/0/foxml1-1.xsd");
