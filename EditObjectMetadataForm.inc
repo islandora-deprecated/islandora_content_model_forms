@@ -267,7 +267,7 @@ class EditObjectMetadataForm {
    *   Data stream mime_type.
    */
   private function modifyManagedDatastream(DOMDocument $dom, $pid, $dsid, $label, $mime_type) {
-    $temp_file_dir = file_directory_temp();
+    $temp_file_dir = file_directory_path();
     $temp_file_path = file_create_filename("datastream.xml", $temp_file_dir);
     if ($dom->save($temp_file_path)) {
       $temp_file_url = file_create_url($temp_file_path);
@@ -276,6 +276,7 @@ class EditObjectMetadataForm {
         drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $pid, '%dsid' => $dsid)));
       }
     }
+    file_delete($temp_file_path);
   }
 
   /**
