@@ -51,7 +51,7 @@ class FOXML extends DOMDocument {
     parent::__construct("1.0", "UTF-8"); // DomDocument
     $this->formatOutput = TRUE;
     $this->preserveWhiteSpace = FALSE;
-    $this->label = substr($label, 0, 255);
+    $this->label = substr($label, 0, 256);
     $this->user = $user->name;
     $this->pid = $pid;
     $this->dsid = $dsid;
@@ -366,13 +366,12 @@ class FOXML extends DOMDocument {
    *   Document.
    */
   private function applyTransformation() {
+    global $base_url;
     $xsl = new DOMDocument();
-    $xsl->load($this->transform);
+    $xsl->load("$base_url/{$this->transform}");
     $xslt = new XSLTProcessor();
     $xslt->importStyleSheet($xsl);
-    $document = new DOMDocument();
-    $document->loadXML($this->document->saveXML());
-    $document = $xslt->transformToDoc($document->documentElement);
+    $document = $xslt->transformToDoc($this->document);
     if ($document) {
       $xpath = new DOMXPath($document);
       // Set the Label
