@@ -203,7 +203,6 @@ class EditObjectMetadataForm {
    * @param string $label 
    */
   private function transform(DOMDocument $document, $transform, $pid, $label) {
-    $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
     $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
     $xpath = new DOMXPath($dublin_core);
     // Set the Label
