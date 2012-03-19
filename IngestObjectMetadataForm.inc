@@ -21,19 +21,31 @@ class IngestObjectMetadataForm {
    *
    * @return array
    */
-  public function getPotentialContentModels($collection_pid) {
-    if (($collection_policy = CollectionPolicy::loadFromCollection($collection_pid)) === FALSE) {
-      return array();
-    }
-    if (!($content_models = $collection_policy->getContentModels())) {
-      return array();
-    }
+  public function getPotentialContentModels($collection_pid, array &$form_state) {
     $potential_models = array();
-    foreach ($content_models as $content_model) {
-      $identifier = $content_model->getIdentifier();
-      $name = $content_model->name;
-      $potential_models["$identifier"] = "$name";
+    
+    //Add models from collection policy.
+    if (($collection_policy = CollectionPolicy::loadFromCollection($collection_pid)) !== FALSE && ($content_models = $collection_policy->getContentModels())) {
+      $potential_models = array();
+      foreach ($content_models as $content_model) {
+        $identifier = $content_model->getIdentifier();
+        $name = $content_model->name;
+        $potential_models["$identifier"] = "$name";
+      }
     }
+
+    //Add cmodels to programatically include...
+    if ($CMs = $form_state['storage']['content_model']) {
+      $CMs = (array)$CMs;
+      module_load_include('inc', 'fedora_repository', 'ContentModel');
+      foreach ($CMs as $content_model) {
+        $content_model = ContentModel::loadFromModel($content_model);
+        $identifier = $content_model->getIdentifier();
+        $name = $content_model->name;
+        $potential_models["$identifier"] = "$name";
+      }
+    }
+    
     return $potential_models;
   }
 
@@ -52,27 +64,29 @@ class IngestObjectMetadataForm {
 
 
   public function createPageOne($collection_pid, $collection_label, array &$form_state) {
-    $potential_models = $this->getPotentialContentModels($collection_pid);
+    //ddebug_backtrace();
+    $potential_models = $this->getPotentialContentModels($collection_pid, $form_state);
     unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
     $identifier = isset($form_state['post']['models']) ? $form_state['post']['models'] : $identifier;
     $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
     $form_names = islandora_content_model_get_form_names($content_model_pid);
+
     $form = array();
     
     if (count($potential_models) == 0) {
       if (!user_access('manage collections')) {
-        $message = t("This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.");
+        $message = t('This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.');
       }
       else {
         if (module_exists('islandora_collection_manager')) {
-          $message = t("Select the <strong>Manage This Collection</strong> tab to add content models or child collections to this collection");
+          $message = t('Select the %manage tab to add content models or child collections to this collection', array('%manage' => 'Manage This Collection')); //XXX: Should get the value from the collection manager?
         }
         else {
           $collection_link = l("Islandora Collection Manager", "https://github.com/Islandora/islandora_collection_manager");
-          $message = t("This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.<br />
-                      We strongly recommend the $collection_link module for managing collection objects.");
+          $message = t('This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.<br />
+                      We strongly recommend the %collection_link module for managing collection objects.', array('%collection_link' => $collection_link));
         }
         $form['message'] = array(
           '#type' => 'item',
@@ -81,12 +95,10 @@ class IngestObjectMetadataForm {
         return $form;
       }
     }
-
-
-
+    
     $form['indicator'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Ingest digital object into collection_pid !collection_label Step #1', array('collection_pid' => $collection_pid, '!collection_label' => $collection_label)),
+      '#title' => t('Ingest digital object into %collection_label (@collection_pid), Step #1:', array('@collection_pid' => $collection_pid, '%collection_label' => $collection_label)),
     );
 
     $form['indicator']['models'] = array(
@@ -108,7 +120,13 @@ class IngestObjectMetadataForm {
       '#type' => 'item',
     );
 
-    if (count($form_names) > 0) {
+    if (count($form_names) == 1) {
+      $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
+        '#type' => 'hidden',
+        '#value' => array_shift(array_keys($form_names))
+      );
+    }
+    elseif (count($form_names) > 0) {
       $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
         '#type' => 'select',
         '#title' => t('Select form'),
@@ -116,12 +134,7 @@ class IngestObjectMetadataForm {
         '#description' => t('Select the form to populate the metadata of the new object.'),
       );
     }
-    if (count($form_names) == 1) {
-      $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
-        '#type' => 'hidden',
-        '#value' => array_shift(array_keys($form_names))
-      );
-    }
+    
     $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
@@ -144,11 +157,13 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
+    //ddebug_backtrace();
     module_load_include('inc', 'fedora_repository', 'formClass');
     $path = drupal_get_path('module', 'islandora_content_model_forms');
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
     $content_model_dsid = ContentModel::getDSIDFromIdentifier($form_state['values']['models']);
 
+    $form_name = NULL;
     if (isset($form_state['values']['forms'])) {
       $form_name = $form_state['values']['forms'];
     }
@@ -158,7 +173,7 @@ class IngestObjectMetadataForm {
       $form_name = key($form_names);
       $form_state['values']['forms'] = $form_name;
     }
-    if (!isset($form_name)) {
+    if (empty($form_name)) {
       $ingestForm = new formClass();
       $form_state['storage']['content_model'] = $content_model;
       $form_state['storage']['collection_pid'] = $collection_pid;
@@ -190,7 +205,7 @@ class IngestObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms']
     );
-
+    dd($form, 'Ingest form');
     return $form;
   }
 
@@ -204,7 +219,9 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function create($collection_pid, $collection_label, array &$form_state) {
+    //ddebug_backtrace();
     $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
+    //ddebug_backtrace();
     if ($page == 1) {
       $form_state['storage']['xml'] = TRUE;
       return $this->createPageOne($collection_pid, $collection_label, $form_state);
@@ -213,6 +230,7 @@ class IngestObjectMetadataForm {
       return $this->createPageTwo($collection_pid, $collection_label, $form_state);
     }
     else {
+      dd('Error!');
       throw new Exception("Couldn't Create the Ingest Form.");
     }
   }
@@ -233,7 +251,7 @@ class IngestObjectMetadataForm {
         drupal_set_message('No file loaded', 'warning');
         return;
       }
-      $file = "$tmpDir/$file->filename";
+      $file = "$tmpDir/{$file->filename}";
       $mods_xml = file_get_contents($file);
       $document = DOMDocument::loadXml($mods_xml);
       file_delete($file);
@@ -243,6 +261,7 @@ class IngestObjectMetadataForm {
       }
     }
     else {
+      //ddebug_backtrace();
       $xml_form = new XMLForm($form_state);
       $doc = $xml_form->submit($form, $form_state);
       $document = $doc->document;
@@ -254,21 +273,44 @@ class IngestObjectMetadataForm {
     $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
     $should_redirect = TRUE;
-    $collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
-    if ($collection_policy !== FALSE) {
+    
+    $relationship = NULL;
+    $pid = NULL;
+    
+    @$collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
+    if ($collection_policy !== FALSE) { //Collection policy exists; use it!
       $relationship = $collection_policy->getRelationship();
+      $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);
+    }
+    
+    if (empty($pid)) { //No PID yet, try to get it some other way...
+      if (!empty($form_state['storage']['pid_namespace'])) {
+        module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+        $pid = Fedora_Item::get_next_PID_in_namespace($form_state['storage']['pid_namespace']);
+      }
+    }
+    
+    if (empty($relationship)) {
+      if (!empty($form_state['storage']['parent_relation'])) {
+        $relationship = $form_state['storage']['parent_relation'];
+      }
+    }
+      
+    if (!empty($relationship) && !empty($pid)) {
       module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
       $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
-      eval('$label = $form_state[\'values\']' . $label_field . ';');
+      eval('$label = $form_state[\'values\']' . $label_field . ';'); //FIXME:  This doesn't really work in many cases (building the title from multiple fields, as for a person's last and first name fields.  Also:
+      //FIXME:  'evel' is terrible... Get rid of it!
+      
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
       }
       else {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
-      $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);
+      
       $form_state['values']['pid'] = $pid;
-      // added ne functionality to static thumbnails to objects if values are provided in MODS forms
+      // added ne functionality to static thumbnails to objects if values are provided in forms
       $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
       $image_dir = isset($form_state['values']['image_directory']) ? $form_state['values']['image_directory'] : NULL;
       $thumbnail_file = isset($form_state['values']['thumbnail_file']) ? $form_state['values']['thumbnail_file'] : NULL;
@@ -278,7 +320,7 @@ class IngestObjectMetadataForm {
         $stored_thumbnail = preg_replace('/\/\//', '/', $stored_thumbnail);
         file_copy($stored_thumbnail, file_directory_path());
         $thumbnail = file_directory_path() . '/' . $thumbnail_file;
-        $_SESSION['fedora_ingest_files']["TN"] = $thumbnail;
+        $_SESSION['fedora_ingest_files']['TN'] = $thumbnail;
       }
 
       $uploaded_file = isset($form_state['values']['ingest-file-location']) && trim($form_state['values']['ingest-file-location']) !== '';
@@ -292,7 +334,6 @@ class IngestObjectMetadataForm {
         }
       }
 
-
       $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
 
       $foxml = new FOXML($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_location, $document, $transform, $state);
@@ -300,7 +341,7 @@ class IngestObjectMetadataForm {
       $_SESSION['fedora_ingest_files'] = '';
       $form_state['storage'] = NULL;
     }
-    $form_state['redirect'] = $base_url . "/fedora/repository/{$collection_pid}";
+    $form_state['redirect'] = "fedora/repository/{$collection_pid}";
   }
 
 }
