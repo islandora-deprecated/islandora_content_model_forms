@@ -11,7 +11,8 @@ module_load_include('inc', 'fedora_repository', 'ContentModel');
 module_load_include('inc', 'xml_form_api', 'XMLForm');
 
 /**
- * 
+ * FIXME:  This is just a collection of functions; there is no object state.
+ *   All functions should be made static and so accessed.
  */
 class EditObjectMetadataForm {
 
