@@ -104,9 +104,25 @@ function islandora_content_model_forms_list() {
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}');
   while ($data = db_fetch_object($result)) {
-    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, $data->transform, $data->template != '');
+    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, islandora_content_model_forms_get_transform_name($data->transform), $data->template != '');
   }
   return theme('list', $list, drupal_get_form('islandora_content_model_forms_list_form'));
+}
+
+function islandora_content_model_forms_get_transform_name($path) {
+  static $transforms = array();
+
+  if (empty($transforms)) {
+    $transforms = module_invoke_all('islandora_content_model_forms_get_transforms');
+  }
+
+  if (array_key_exists($path, $transforms)) {
+    return $transforms[$path];
+  }
+  else {
+    drupal_set_message(t('Transform not specified in hook?: %path', array('%path' => $path)), 'error');
+    return $path;
+  }
 }
 
 /**
@@ -311,18 +327,23 @@ function islandora_content_model_forms_get_form_names() {
   return $form_names;
 }
 
+function islandora_content_model_forms_get_transforms() {
+  return module_invoke_all('islandora_content_model_forms_get_transforms');
+}
+
 /**
- * 
+ * Implementation of islandora_content_model_forms_get_transforms
  * @return array
  */
-function islandora_content_model_forms_get_transforms() {
+function islandora_content_model_forms_islandora_content_model_forms_get_transforms() {
+  $p = drupal_get_path('module', 'islandora_content_model_forms');
   $transforms = array();
-  $include_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms";
+  $include_path = "$p/transforms";
   $dir = opendir($include_path);
   if ($dir !== FALSE) {
     while (($file = readdir($dir)) !== FALSE) {
       if (preg_match('/\.xslt?$/', $file)) {
-        $transforms[$file] = $file;
+        $transforms["$include_path/$file"] = $file . " (islandora_content_model_forms)";
       }
     }
   }

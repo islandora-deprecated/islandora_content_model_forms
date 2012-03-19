@@ -11,7 +11,8 @@ module_load_include('inc', 'fedora_repository', 'ContentModel');
 module_load_include('inc', 'xml_form_api', 'XMLForm');
 
 /**
- * 
+ * FIXME:  This is just a collection of functions; there is no object state.
+ *   All functions should be made static and so accessed.
  */
 class EditObjectMetadataForm {
 
@@ -203,7 +204,6 @@ class EditObjectMetadataForm {
    * @param string $label 
    */
   private function transform(DOMDocument $document, $transform, $pid, $label) {
-    $transform = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/$transform";
     $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);
     $xpath = new DOMXPath($dublin_core);
     // Set the Label
