@@ -207,7 +207,7 @@ class IngestObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms']
     );
-    dd($form, 'Ingest form');
+    //dd($form, 'Ingest form');
     return $form;
   }
 
@@ -232,7 +232,7 @@ class IngestObjectMetadataForm {
       return $this->createPageTwo($collection_pid, $collection_label, $form_state);
     }
     else {
-      dd('Error!');
+      //dd('Error!');
       throw new Exception("Couldn't Create the Ingest Form.");
     }
   }
