@@ -387,6 +387,7 @@ class FOXML extends DOMDocument {
         watchdog('islandora_content_model_forms', 'The XSLT transform to DC "@old_dir" does not exist!.', array(
           '@old_dir' => "$old_transform_path/{$this->transform}"
         ), WATCHDOG_ERROR);
+        return NULL;
       }
     }
     
