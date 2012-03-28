@@ -333,19 +333,21 @@ class FOXML extends DOMDocument {
    * Creates an xml based datastream by importing the root node from $this->document.
    */
   public function createDocumentDatastream() {
-    $datastream = $this->createDatastreamElement($this->dsid, 'A', 'X');
-    $version = $this->createDatastreamVersionElement("{$this->dsid}.0", "{$this->dsid} Record", 'text/xml');
-    $content = $this->createDatastreamContentElement();
-    $node = $this->importNode($this->document->documentElement, TRUE);
-    $this->root->appendChild($datastream)->appendChild($version)->appendChild($content)->appendChild($node);
-    // Once again god damn you libxml...
-    $class = get_class($this->document);
-    // FIX THIS!
-    /*
-      $namespaces = call_user_func(array($class, 'getRequiredNamespaces'));
-      foreach ($namespaces as $prefix => $uri) {
-      $node->setAttributeNS(self::xmlns, "xmlns:$prefix", $uri);
-      } */
+    if($this->document !== NULL) {
+      $datastream = $this->createDatastreamElement($this->dsid, 'A', 'X');
+      $version = $this->createDatastreamVersionElement("{$this->dsid}.0", "{$this->dsid} Record", 'text/xml');
+      $content = $this->createDatastreamContentElement();
+      $node = $this->importNode($this->document->documentElement, TRUE);
+      $this->root->appendChild($datastream)->appendChild($version)->appendChild($content)->appendChild($node);
+      // Once again god damn you libxml...
+      $class = get_class($this->document);
+      // FIX THIS!
+      /*
+        $namespaces = call_user_func(array($class, 'getRequiredNamespaces'));
+        foreach ($namespaces as $prefix => $uri) {
+        $node->setAttributeNS(self::xmlns, "xmlns:$prefix", $uri);
+        } */
+    }
   }
 
   /**
@@ -370,41 +372,43 @@ class FOXML extends DOMDocument {
    *   Document.
    */
   private function applyTransformation() {
-    $xsl = new DOMDocument();
-    $xsl_file = "./{$this->transform}"; 
-    
-    $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . '/transforms';
-    if (!file_exists($xsl_file)) {
-      $xsl_file = "./$old_transform_path/{$this->transform}";
-      
-      if (file_exists($xsl_file)) {
-        watchdog('islandora_content_model_forms', 'Could not find the transform %transform.  Will use @old_dir.  Transforms should be specified by a relative path.', array(
-          '%transform' => $this->transform,
-          '@old_dir' => $old_transform_path
-        ), WATCHDOG_WARNING);
+    if($this->transform !== NULL) {
+      $xsl = new DOMDocument();
+      $xsl_file = "./{$this->transform}";
+
+      $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . '/transforms';
+      if (!file_exists($xsl_file)) {
+        $xsl_file = "./$old_transform_path/{$this->transform}";
+
+        if (file_exists($xsl_file)) {
+          watchdog('islandora_content_model_forms', 'Could not find the transform %transform.  Will use @old_dir.  Transforms should be specified by a relative path.', array(
+            '%transform' => $this->transform,
+            '@old_dir' => $old_transform_path
+          ), WATCHDOG_WARNING);
+        }
+        else {
+          watchdog('islandora_content_model_forms', 'The XSLT transform to DC "@old_dir" does not exist!.', array(
+            '@old_dir' => "$old_transform_path/{$this->transform}"
+          ), WATCHDOG_ERROR);
+          return NULL;
+        }
       }
-      else {
-        watchdog('islandora_content_model_forms', 'The XSLT transform to DC "@old_dir" does not exist!.', array(
-          '@old_dir' => "$old_transform_path/{$this->transform}"
-        ), WATCHDOG_ERROR);
-        return NULL;
-      }
-    }
-    
-    $xsl->load($xsl_file);
-    $xslt = new XSLTProcessor();
-    $xslt->importStyleSheet($xsl);
-    $document = $xslt->transformToDoc($this->document);
-    if ($document) {
-      $xpath = new DOMXPath($document);
-      // Set the Label
-      $results = $xpath->query("*[local-name()='title']");
-      $results->item(0)->nodeValue = $this->label;
-      // Set the Pid
-      $results = $xpath->query("*[local-name()='identifier']");
-      $results->item(0)->nodeValue = $this->pid;
-      if (isset($document->documentElement)) {
-        return $this->importNode($document->documentElement, TRUE);
+
+      $xsl->load($xsl_file);
+      $xslt = new XSLTProcessor();
+      $xslt->importStyleSheet($xsl);
+      $document = $xslt->transformToDoc($this->document);
+      if ($document) {
+        $xpath = new DOMXPath($document);
+        // Set the Label
+        $results = $xpath->query("*[local-name()='title']");
+        $results->item(0)->nodeValue = $this->label;
+        // Set the Pid
+        $results = $xpath->query("*[local-name()='identifier']");
+        $results->item(0)->nodeValue = $this->pid;
+        if (isset($document->documentElement)) {
+          return $this->importNode($document->documentElement, TRUE);
+        }
       }
     }
     return NULL;
