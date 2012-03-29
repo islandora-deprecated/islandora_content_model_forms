@@ -235,7 +235,6 @@ class IngestObjectMetadataForm {
       return $this->createPageTwo($collection_pid, $collection_label, $form_state);
     }
     else {
-      //dd('Error!');
       throw new Exception("Couldn't Create the Ingest Form.");
     }
   }
@@ -266,7 +265,6 @@ class IngestObjectMetadataForm {
       }
     }
     else {
-      //ddebug_backtrace();
       $xml_form = new XMLForm($form_state);
       $doc = $xml_form->submit($form, $form_state);
       $document = $doc->document;
@@ -305,7 +303,7 @@ class IngestObjectMetadataForm {
       module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
       $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
       eval('$label = $form_state[\'values\']' . $label_field . ';'); //FIXME:  This doesn't really work in many cases (building the title from multiple fields, as for a person's last and first name fields.  Also:
-      //FIXME:  'evel' is terrible... Get rid of it!
+      //FIXME:  'eval' is terrible... Get rid of it!
       
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
