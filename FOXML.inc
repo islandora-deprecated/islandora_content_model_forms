@@ -373,19 +373,22 @@ class FOXML extends DOMDocument {
     $xsl = new DOMDocument();
     $xsl_file = "./{$this->transform}"; 
     
-    $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . '/transforms';
+    $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/{$this->transform}";
     if (!file_exists($xsl_file)) {
-      $xsl_file = "./$old_transform_path/{$this->transform}";
+      $xsl_file = "./$old_transform_path";
       
       if (file_exists($xsl_file)) {
-        watchdog('islandora_content_model_forms', 'Could not find the transform %transform.  Will use @old_dir.  Transforms should be specified by a relative path.', array(
-          '%transform' => $this->transform,
-          '@old_dir' => $old_transform_path
+        watchdog('islandora_content_model_forms', 'Could not find the transform "@transform" (transforms ' . 
+          'should be specified by a path relative to the server\'s document root).  Will use "@old_dir".', array(
+          '@transform' => $this->transform,
+          '@old_dir' => $old_transform_path,
         ), WATCHDOG_WARNING);
       }
       else {
-        watchdog('islandora_content_model_forms', 'The XSLT transform to DC "@old_dir" does not exist!.', array(
-          '@old_dir' => "$old_transform_path/{$this->transform}"
+        watchdog('islandora_content_model_forms', 'The XSLT transform to DC cannot be located as either "@transform"' . 
+          ' or "@old_dir"!.', array(
+          '@transform' => $this->transform,
+          '@old_dir' => $old_transform_path,
         ), WATCHDOG_ERROR);
         return NULL;
       }
