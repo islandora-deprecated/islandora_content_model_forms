@@ -371,30 +371,8 @@ class FOXML extends DOMDocument {
    */
   private function applyTransformation() {
     $xsl = new DOMDocument();
-    $xsl_file = "./{$this->transform}"; 
     
-    $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/{$this->transform}";
-    if (!file_exists($xsl_file)) {
-      $xsl_file = "./$old_transform_path";
-      
-      if (file_exists($xsl_file)) {
-        watchdog('islandora_content_model_forms', 'Could not find the transform "@transform" (transforms ' . 
-          'should be specified by a path relative to the server\'s document root).  Will use "@old_dir".', array(
-          '@transform' => $this->transform,
-          '@old_dir' => $old_transform_path,
-        ), WATCHDOG_WARNING);
-      }
-      else {
-        watchdog('islandora_content_model_forms', 'The XSLT transform to DC cannot be located as either "@transform"' . 
-          ' or "@old_dir"!.', array(
-          '@transform' => $this->transform,
-          '@old_dir' => $old_transform_path,
-        ), WATCHDOG_ERROR);
-        return NULL;
-      }
-    }
-    
-    $xsl->load($xsl_file);
+    $xsl->load($this->transform);
     $xslt = new XSLTProcessor();
     $xslt->importStyleSheet($xsl);
     $document = $xslt->transformToDoc($this->document);
