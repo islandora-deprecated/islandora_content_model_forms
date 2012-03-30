@@ -373,7 +373,7 @@ class FOXML extends DOMDocument {
    */
   private function applyTransformation() {
     if($this->transform !== NULL) {
-
+      $xsl = new DOMDocument();
       $xsl->load($this->transform);
       $xslt = new XSLTProcessor();
       $xslt->importStyleSheet($xsl);
