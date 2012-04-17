@@ -333,19 +333,21 @@ class FOXML extends DOMDocument {
    * Creates an xml based datastream by importing the root node from $this->document.
    */
   public function createDocumentDatastream() {
-    $datastream = $this->createDatastreamElement($this->dsid, 'A', 'X');
-    $version = $this->createDatastreamVersionElement("{$this->dsid}.0", "{$this->dsid} Record", 'text/xml');
-    $content = $this->createDatastreamContentElement();
-    $node = $this->importNode($this->document->documentElement, TRUE);
-    $this->root->appendChild($datastream)->appendChild($version)->appendChild($content)->appendChild($node);
-    // Once again god damn you libxml...
-    $class = get_class($this->document);
-    // FIX THIS!
-    /*
-      $namespaces = call_user_func(array($class, 'getRequiredNamespaces'));
-      foreach ($namespaces as $prefix => $uri) {
-      $node->setAttributeNS(self::xmlns, "xmlns:$prefix", $uri);
-      } */
+    if($this->document !== NULL) {
+      $datastream = $this->createDatastreamElement($this->dsid, 'A', 'X');
+      $version = $this->createDatastreamVersionElement("{$this->dsid}.0", "{$this->dsid} Record", 'text/xml');
+      $content = $this->createDatastreamContentElement();
+      $node = $this->importNode($this->document->documentElement, TRUE);
+      $this->root->appendChild($datastream)->appendChild($version)->appendChild($content)->appendChild($node);
+      // Once again god damn you libxml...
+      $class = get_class($this->document);
+      // FIX THIS!
+      /*
+        $namespaces = call_user_func(array($class, 'getRequiredNamespaces'));
+        foreach ($namespaces as $prefix => $uri) {
+        $node->setAttributeNS(self::xmlns, "xmlns:$prefix", $uri);
+        } */
+    }
   }
 
   /**
@@ -370,22 +372,23 @@ class FOXML extends DOMDocument {
    *   Document.
    */
   private function applyTransformation() {
-    global $base_url;
-    $xsl = new DOMDocument();
-    $xsl->load("$base_url/{$this->transform}");
-    $xslt = new XSLTProcessor();
-    $xslt->importStyleSheet($xsl);
-    $document = $xslt->transformToDoc($this->document);
-    if ($document) {
-      $xpath = new DOMXPath($document);
-      // Set the Label
-      $results = $xpath->query("*[local-name()='title']");
-      $results->item(0)->nodeValue = $this->label;
-      // Set the Pid
-      $results = $xpath->query("*[local-name()='identifier']");
-      $results->item(0)->nodeValue = $this->pid;
-      if (isset($document->documentElement)) {
-        return $this->importNode($document->documentElement, TRUE);
+    if($this->transform !== NULL) {
+      $xsl = new DOMDocument();
+      $xsl->load($this->transform);
+      $xslt = new XSLTProcessor();
+      $xslt->importStyleSheet($xsl);
+      $document = $xslt->transformToDoc($this->document);
+      if ($document) {
+        $xpath = new DOMXPath($document);
+        // Set the Label
+        $results = $xpath->query("*[local-name()='title']");
+        $results->item(0)->nodeValue = $this->label;
+        // Set the Pid
+        $results = $xpath->query("*[local-name()='identifier']");
+        $results->item(0)->nodeValue = $this->pid;
+        if (isset($document->documentElement)) {
+          return $this->importNode($document->documentElement, TRUE);
+        }
       }
     }
     return NULL;

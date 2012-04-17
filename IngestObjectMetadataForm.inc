@@ -159,7 +159,6 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($collection_pid, $collection_label, array &$form_state) {
-    //ddebug_backtrace();
     module_load_include('inc', 'fedora_repository', 'formClass');
     $path = drupal_get_path('module', 'islandora_content_model_forms');
     $content_model_pid = ContentModel::getPidFromIdentifier($form_state['values']['models']);
@@ -182,7 +181,13 @@ class IngestObjectMetadataForm {
       return $ingestForm->createQDCIngestForm($collection_pid, $collection_label, $form_state);
     }
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
-    $form = xml_form_builder_get_form($form_state, $form_name);
+    
+    $xml = NULL;
+    if (!empty($form_state['storage']['xml_data'])) {
+      $xml = $form_state['storage']['xml_data'];
+    }
+    
+    $form = xml_form_builder_get_form($form_state, $form_name, $xml);
     $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
@@ -207,7 +212,6 @@ class IngestObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms']
     );
-    //dd($form, 'Ingest form');
 
     return $form;
   }
@@ -222,9 +226,8 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function create($collection_pid, $collection_label, array &$form_state) {
-    //ddebug_backtrace();
     $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
-    //ddebug_backtrace();
+
     if ($page == 1) {
       $form_state['storage']['xml'] = TRUE;
       return $this->createPageOne($collection_pid, $collection_label, $form_state);
@@ -233,7 +236,6 @@ class IngestObjectMetadataForm {
       return $this->createPageTwo($collection_pid, $collection_label, $form_state);
     }
     else {
-      //dd('Error!');
       throw new Exception("Couldn't Create the Ingest Form.");
     }
   }
@@ -264,7 +266,6 @@ class IngestObjectMetadataForm {
       }
     }
     else {
-      //ddebug_backtrace();
       $xml_form = new XMLForm($form_state);
       $doc = $xml_form->submit($form, $form_state);
       $document = $doc->document;
@@ -303,7 +304,7 @@ class IngestObjectMetadataForm {
       module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
       $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
       eval('$label = $form_state[\'values\']' . $label_field . ';'); //FIXME:  This doesn't really work in many cases (building the title from multiple fields, as for a person's last and first name fields.  Also:
-      //FIXME:  'evel' is terrible... Get rid of it!
+      //FIXME:  'eval' is terrible... Get rid of it!
       
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
