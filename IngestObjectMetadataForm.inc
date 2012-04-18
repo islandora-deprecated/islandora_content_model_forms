@@ -86,9 +86,9 @@ class IngestObjectMetadataForm {
           $message = t('Select the %manage tab to add content models or child collections to this collection', array('%manage' => 'Manage This Collection')); //XXX: Should get the value from the collection manager?
         }
         else {
-          $collection_link = l("Islandora Collection Manager", "https://github.com/Islandora/islandora_collection_manager");
+          $collection_link = l("Islandora Collection Manager", "https://wiki.duraspace.org/display/ISLANDORA6121/Collection+Manager");
           $message = t('This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.<br />
-                      We strongly recommend the %collection_link module for managing collection objects.', array('%collection_link' => $collection_link));
+                      We strongly recommend enabling the !collection_link module for managing collection objects.', array('!collection_link' => $collection_link));
         }
         $form['message'] = array(
           '#type' => 'item',
@@ -212,6 +212,7 @@ class IngestObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms']
     );
+
     return $form;
   }
 
