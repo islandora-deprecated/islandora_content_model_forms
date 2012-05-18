@@ -18,9 +18,9 @@ class EditObjectMetadataForm {
 
   /**
    * Get Content Models for the form.
-   * 
+   *
    * @param string $collection_pid
-   * 
+   *
    * @return array
    */
   public function getPotentialContentModels($collection_pid) {
@@ -43,12 +43,12 @@ class EditObjectMetadataForm {
 
   /**
    * Create page one.
-   * 
+   *
    * @param string $pid
    * @param string $dsid
    * @param SoapClient $client
    * @param array $form_state
-   * 
+   *
    * @return array
    */
   public function createPageOne($pid, $client, array &$form_state) {
@@ -65,25 +65,25 @@ class EditObjectMetadataForm {
           '#type' => 'select',
           '#title' => t('Forms'),
           '#options' => $form_names,
-          '#description' => t('Select the form to edit.')
-        )
+          '#description' => t('Select the form to edit.'),
+        ),
       ),
       'submit' => array(
         '#type' => 'submit',
         '#submit' => array('fedora_repository_edit_qdc_form_submit'),
-        '#value' => 'Next'
-      )
+        '#value' => 'Next',
+      ),
     );
   }
 
   /**
    * Create page two.
-   * 
+   *
    * @param string $pid
    * @param string $dsid
    * @param SoapClient $client
    * @param array $form_state
-   * 
+   *
    * @return array
    */
   public function createPageTwo($pid, $client, array &$form_state) {
@@ -113,10 +113,15 @@ class EditObjectMetadataForm {
   }
 
   private function getMetadata($pid, $dsid, $client) {
-    $params = array('pid' => $pid, 'dsID' => $dsid, 'asOfDateTime' => "");
+    $params = array(
+      'pid' => $pid,
+      'dsID' => $dsid,
+      'asOfDateTime' => "",
+    );
     try {
       $object = $client->__soapCAll('getDatastreamDissemination', array('parameters' => $params));
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       return array();
     }
     return trim($object->dissemination->stream);
@@ -124,12 +129,12 @@ class EditObjectMetadataForm {
 
   /**
    * Create forms.
-   * 
+   *
    * @param string $pid
    * @param string $dsid
    * @param SoapClient $client
    * @param array $form_state
-   * 
+   *
    * @return array
    */
   public function create($pid, $client, array &$form_state) {
@@ -148,9 +153,9 @@ class EditObjectMetadataForm {
 
   /**
    * Submit.
-   * 
+   *
    * @param array $form
-   * @param array $form_state 
+   * @param array $form_state
    */
   public function submit(array &$form, array &$form_state) {
     global $base_url;
@@ -173,7 +178,7 @@ class EditObjectMetadataForm {
    * @param string $pid
    * @param string $dsid
    * @param array $form
-   * @param array $form_state 
+   * @param array $form_state
    */
   private function modifyMetadata($pid, $dsid, array &$form, array &$form_state) {
     $xml_form = new XMLForm($form_state);
@@ -185,7 +190,7 @@ class EditObjectMetadataForm {
 
   /**
    *
-   * @param string $label 
+   * @param string $label
    */
   private function setObjectLabel($pid, $label) {
     // Because of FCREPO-1059 we need to make sure that any label we create doesn't
@@ -201,7 +206,7 @@ class EditObjectMetadataForm {
    * @param DOMDocument $document
    * @param string $transform
    * @param string $pid
-   * @param string $label 
+   * @param string $label
    */
   private function transform(DOMDocument $document, $transform, $pid, $label) {
     $dublin_core = $this->transformDocumentIntoDublinCore($document, $transform);

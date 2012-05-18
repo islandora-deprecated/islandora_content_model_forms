@@ -25,7 +25,7 @@ class IngestObjectMetadataForm {
    */
   public function getPotentialContentModels($collection_pid, array &$form_state) {
     $potential_models = array();
-    
+
     //Add models from collection policy.
     if (($collection_policy = CollectionPolicy::loadFromCollection($collection_pid)) !== FALSE && ($content_models = $collection_policy->getContentModels())) {
       $potential_models = array();
@@ -38,7 +38,7 @@ class IngestObjectMetadataForm {
 
     //Add cmodels to programatically include...
     if ($CMs = $form_state['storage']['content_model']) {
-      $CMs = (array)$CMs;
+      $CMs = (array) $CMs;
       module_load_include('inc', 'fedora_repository', 'ContentModel');
       foreach ($CMs as $content_model) {
         $content_model = ContentModel::loadFromModel($content_model);
@@ -47,7 +47,7 @@ class IngestObjectMetadataForm {
         $potential_models["$identifier"] = "$name";
       }
     }
-    
+
     return $potential_models;
   }
 
@@ -76,7 +76,7 @@ class IngestObjectMetadataForm {
     $form_names = islandora_content_model_get_form_names($content_model_pid);
 
     $form = array();
-    
+
     if (count($potential_models) == 0) {
       if (!user_access('manage collections')) {
         $message = t('This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.');
@@ -97,7 +97,7 @@ class IngestObjectMetadataForm {
         return $form;
       }
     }
-    
+
     $form['indicator'] = array(
       '#type' => 'fieldset',
       '#title' => t('Ingest digital object into %collection_label (@collection_pid), Step #1:', array('@collection_pid' => $collection_pid, '%collection_label' => $collection_label)),
@@ -125,7 +125,7 @@ class IngestObjectMetadataForm {
     if (count($form_names) == 1) {
       $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
         '#type' => 'hidden',
-        '#value' => array_shift(array_keys($form_names))
+        '#value' => array_shift(array_keys($form_names)),
       );
     }
     elseif (count($form_names) > 0) {
@@ -136,10 +136,10 @@ class IngestObjectMetadataForm {
         '#description' => t('Select the form to populate the metadata of the new object.'),
       );
     }
-    
+
     $form['collection_pid'] = array(
       '#type' => 'hidden',
-      '#value' => $collection_pid
+      '#value' => $collection_pid,
     );
     $form['submit'] = array(
       '#type' => 'submit',
@@ -181,36 +181,36 @@ class IngestObjectMetadataForm {
       return $ingestForm->createQDCIngestForm($collection_pid, $collection_label, $form_state);
     }
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
-    
+
     $xml = NULL;
     if (!empty($form_state['storage']['xml_data'])) {
       $xml = $form_state['storage']['xml_data'];
     }
-    
+
     $form = xml_form_builder_get_form($form_state, $form_name, $xml);
     $form['collection_pid'] = array(
       '#type' => 'hidden',
-      '#value' => $collection_pid
+      '#value' => $collection_pid,
     );
     $form['content_model_pid'] = array(
       '#type' => 'hidden',
-      '#value' => $content_model_pid
+      '#value' => $content_model_pid,
     );
     $form['content_model_dsid'] = array(
       '#type' => 'hidden',
-      '#value' => $content_model_dsid
+      '#value' => $content_model_dsid,
     );
     $form['dsid'] = array(
       '#type' => 'hidden',
-      '#value' => $dsid
+      '#value' => $dsid,
     );
     $form['models'] = array(
       '#type' => 'hidden',
-      '#value' => $form_state['values']['models']
+      '#value' => $form_state['values']['models'],
     );
     $form['forms'] = array(
       '#type' => 'hidden',
-      '#value' => $form_state['values']['forms']
+      '#value' => $form_state['values']['forms'],
     );
 
     return $form;
@@ -277,42 +277,42 @@ class IngestObjectMetadataForm {
     $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
     $should_redirect = TRUE;
-    
+
     $relationship = NULL;
     $pid = NULL;
-    
+
     @$collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
     if ($collection_policy !== FALSE) { //Collection policy exists; use it!
       $relationship = $collection_policy->getRelationship();
       $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);
     }
-    
+
     if (empty($pid)) { //No PID yet, try to get it some other way...
       if (!empty($form_state['storage']['pid_namespace'])) {
         module_load_include('inc', 'fedora_repository', 'api/fedora_item');
         $pid = Fedora_Item::get_next_PID_in_namespace($form_state['storage']['pid_namespace']);
       }
     }
-    
+
     if (empty($relationship)) {
       if (!empty($form_state['storage']['parent_relation'])) {
         $relationship = $form_state['storage']['parent_relation'];
       }
     }
-      
+
     if (!empty($relationship) && !empty($pid)) {
       module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
       $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
       eval('$label = $form_state[\'values\']' . $label_field . ';'); //FIXME:  This doesn't really work in many cases (building the title from multiple fields, as for a person's last and first name fields.  Also:
       //FIXME:  'eval' is terrible... Get rid of it!
-      
+
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
       }
       else {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
-      
+
       $form_state['values']['pid'] = $pid;
       // added ne functionality to static thumbnails to objects if values are provided in forms
       $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
@@ -352,7 +352,10 @@ class IngestObjectMetadataForm {
 
 function islandora_content_model_update_form_choice() {
   // prep only
-  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_state = array(
+    'storage' => NULL,
+    'submitted' => FALSE,
+  );
   $form_build_id = $_POST['form_build_id'];
   $form = form_get_cache($form_build_id, $form_state);
   $args = $form['#parameters'];
@@ -360,14 +363,15 @@ function islandora_content_model_update_form_choice() {
   $form_state['post'] = $form['#post'] = $_POST;
   // Enable the submit/validate handlers to determine whether AHAH-submittted.
   $form_state['ahah_submission'] = TRUE;
-  $form['#programmed'] = $form['#redirect'] = FALSE;
+  $form['#programmed'] = $form_state['#redirect'] = FALSE;
   drupal_process_form($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
 
   $changed_elements = $form['indicator']['content_form_ahah_wrapper'];
   unset($changed_elements['#prefix'], $changed_elements['#suffix']);
+  // TODO Please change this theme call to use an associative array for the $variables parameter.
   $output = theme('status_messages') . drupal_render($changed_elements);
-  drupal_json(array(
+  drupal_json_output(array(
     'status' => TRUE,
     'data' => $output,
   ));

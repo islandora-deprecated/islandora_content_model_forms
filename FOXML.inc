@@ -44,7 +44,7 @@ class FOXML extends DOMDocument {
    * @param <type> $collection_pid
    * @param <type> $relationship
    * @param <type> $ingest_file_location
-   * @param <type> $document 
+   * @param <type> $document
    */
   public function __construct($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_locations, $document, $transform, $state = 'A') {
     global $user;
@@ -158,8 +158,9 @@ class FOXML extends DOMDocument {
 
   private function createIngestFileDatastreams() {
     module_load_include('inc', 'fedora_repository', 'api/fedora_util');
-    if (empty($this->ingestFileLocations) || count($this->ingestFileLocations) === 0)
+    if (empty($this->ingestFileLocations) || count($this->ingestFileLocations) === 0) {
       return;
+    }
     foreach ($this->ingestFileLocations as $dsid => $file) {
       $dsid = fix_dsid($dsid);
       list($label, $mime_type, $file_url) = $this->getFileAttributes($file);
@@ -212,7 +213,8 @@ class FOXML extends DOMDocument {
     }
     try {
       $xml = new SimpleXMLElement($policy_stream);
-    } catch (Exception $exception) {
+    }
+    catch (Exception $exception) {
       watchdog(t("Fedora_Repository"), t("Problem getting security policy."), NULL, WATCHDOG_ERROR);
       drupal_set_message(t('Problem getting security policy: @e', array('@e' => $exception->getMessage())), 'error');
       return FALSE;
@@ -333,7 +335,7 @@ class FOXML extends DOMDocument {
    * Creates an xml based datastream by importing the root node from $this->document.
    */
   public function createDocumentDatastream() {
-    if($this->document !== NULL) {
+    if ($this->document !== NULL) {
       $datastream = $this->createDatastreamElement($this->dsid, 'A', 'X');
       $version = $this->createDatastreamVersionElement("{$this->dsid}.0", "{$this->dsid} Record", 'text/xml');
       $content = $this->createDatastreamContentElement();
@@ -343,10 +345,10 @@ class FOXML extends DOMDocument {
       $class = get_class($this->document);
       // FIX THIS!
       /*
-        $namespaces = call_user_func(array($class, 'getRequiredNamespaces'));
-        foreach ($namespaces as $prefix => $uri) {
-        $node->setAttributeNS(self::xmlns, "xmlns:$prefix", $uri);
-        } */
+       $namespaces = call_user_func(array($class, 'getRequiredNamespaces'));
+       foreach ($namespaces as $prefix => $uri) {
+       $node->setAttributeNS(self::xmlns, "xmlns:$prefix", $uri);
+       } */
     }
   }
 
@@ -372,7 +374,7 @@ class FOXML extends DOMDocument {
    *   Document.
    */
   private function applyTransformation() {
-    if($this->transform !== NULL) {
+    if ($this->transform !== NULL) {
       $xsl = new DOMDocument();
       $xsl->load($this->transform);
       $xslt = new XSLTProcessor();
@@ -411,12 +413,14 @@ class FOXML extends DOMDocument {
           file_delete($file);
         }
       }
-    } catch (exception $exception) {
+    }
+    catch (exception $exception) {
       drupal_set_message(t("Error ingesting object: @e", array('@e' => $exception->getMessage())), 'error');
       watchdog(t("Fedora_Repository"), t("Error ingesting object: @e", array('@e' => $exception->getMessage())), NULL, WATCHDOG_ERROR);
       // TODO is this necessary?
-      foreach ($this->ingestFileLocations as $file)
+      foreach ($this->ingestFileLocations as $file) {
         file_delete($file);
+      }
     }
     return $ret;
   }

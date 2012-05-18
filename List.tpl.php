@@ -26,6 +26,6 @@
       </table>
     </div>
     <div id="content-model-actions">
-    <?php print $form ?>
+    <?php print render($form) ?>
   </div>
 </div>

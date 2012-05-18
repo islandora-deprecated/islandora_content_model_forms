@@ -9,11 +9,12 @@
  */
 
 /**
- * Implementation of hook_install.
+ * Implements hook_install().
  */
 function islandora_content_model_forms_install() {
   module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
-  drupal_install_schema('islandora_content_model_forms');
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.
+  // drupal_install_schema('islandora_content_model_forms')
   if (!XMLFormDatabase::Exists('default')) {
     $definition = new DOMDocument();
     $definition->load(drupal_get_path('module', 'islandora_content_model_forms') . '/data/definitions/oai_dc_basic.xml');
@@ -22,60 +23,61 @@ function islandora_content_model_forms_install() {
 }
 
 /**
- * Implementation of hook_uninstall.
+ * Implements hook_uninstall().
  */
 function islandora_content_model_forms_uninstall() {
-  drupal_uninstall_schema('islandora_content_model_forms');
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.
+  // drupal_uninstall_schema('islandora_content_model_forms')
 }
 
 /**
- * Implementation of hook_schema.
- * 
+ * Implements hook_schema().
+ *
  * @return array
  */
 function islandora_content_model_forms_schema() {
   $schema['islandora_content_model_forms'] = array(
-    'description' => t('This table is used to store associations between XML Form API style form definitions, and the Content models that use them.'),
+    'description' => 'This table is used to store associations between XML Form API style form definitions, and the Content models that use them.',
     'fields' => array(
       'id' => array(
         'type' => 'serial',
         'not NULL' => TRUE,
       ),
       'content_model' => array(
-        'description' => t('The name of the content model.'),
+        'description' => 'The name of the content model.',
         'type' => 'varchar',
         'length' => 128,
-        'not NULL' => TRUE
+        'not NULL' => TRUE,
       ),
       'form_name' => array(
-        'description' => t('The name of the stored form.'),
+        'description' => 'The name of the stored form.',
         'type' => 'varchar',
         'length' => 128,
-        'not NULL' => TRUE
+        'not NULL' => TRUE,
       ),
       'dsid' => array(
-        'description' => t('The datastream id of the metadata to be edited.'),
+        'description' => 'The datastream id of the metadata to be edited.',
         'type' => 'varchar',
         'length' => 128,
-        'not NULL' => TRUE
+        'not NULL' => TRUE,
       ),
       'title_field' => array(
-        'description' => t('The form field that you want to use for the objects label.'),
+        'description' => 'The form field that you want to use for the objects label.',
         'type' => 'varchar',
         'length' => 128,
-        'not NULL' => TRUE
+        'not NULL' => TRUE,
       ),
       'transform' => array(
-        'description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
+        'description' => 'A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.',
         'type' => 'varchar',
         'length' => 128,
-        'not NULL' => TRUE
+        'not NULL' => TRUE,
       ),
       'template' => array(
-        'description' => t('A sample metadata file used to prepopulate the form on ingest.'),
+        'description' => 'A sample metadata file used to prepopulate the form on ingest.',
         'type' => 'text',
         'size' => 'medium',
-        'not NULL' => TRUE
+        'not NULL' => TRUE,
       ),
     ),
     'primary key' => array('id'),

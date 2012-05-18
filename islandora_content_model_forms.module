@@ -16,7 +16,7 @@ define("PERM_ADMIN_FORM_ASSOCIATION", 'Admin Form Associations');
 
 /**
  * Implementation of Hook Menu.
- * 
+ *
  * @return array
  */
 function islandora_content_model_forms_menu() {
@@ -71,13 +71,16 @@ function islandora_content_model_forms_menu() {
 }
 
 /**
- * Implements hook_perm. Register permissions.
- * 
+ * Implements hook_permission. Register permissions().
+ *
  * @return array
  */
-function islandora_content_model_forms_perm() {
+function islandora_content_model_forms_permission() {
   return array(
-    PERM_ADMIN_FORM_ASSOCIATION,
+    PERM_ADMIN_FORM_ASSOCIATION => array(
+      'title' => t(PERM_ADMIN_FORM_ASSOCIATION),
+      'description' => t('TODO Add a description for PERM_ADMIN_FORM_ASSOCIATION'),
+    ),
   );
 }
 
@@ -89,7 +92,7 @@ function islandora_content_model_forms_perm() {
 function islandora_content_model_forms_theme() {
   return array(
     'list' => array(
-      'arguments' => array('list' => NULL, 'form' => NULL),
+      'variables' => array('list' => NULL, 'form' => NULL),
       'template' => 'List',
     ),
   );
@@ -102,13 +105,17 @@ function islandora_content_model_forms_list() {
   $path = drupal_get_path('module', 'islandora_content_model_forms');
   //drupal_add_css("$path/css/form.css");
   $list = array();
-  $result = db_query('SELECT * FROM {islandora_content_model_forms}');
-  while ($data = db_fetch_object($result)) {
+  $result = db_query('SELECT * FROM {islandora_content_model_forms}')->fetchAll();
+  foreach ($result AS $data) {
     $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, islandora_content_model_forms_get_transform_name($data->transform), $data->template != '');
   }
-  return theme('list', $list, drupal_get_form('islandora_content_model_forms_list_form'));
+  return theme('list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function islandora_content_model_forms_get_transform_name($path) {
   static $transforms = array();
 
@@ -127,27 +134,31 @@ function islandora_content_model_forms_get_transform_name($path) {
 
 /**
  * Remove the association identified by $id.
- * 
- * @param int $id 
+ *
+ * @param int $id
  */
 function islandora_content_model_forms_remove($id) {
-  db_query("DELETE FROM {islandora_content_model_forms} WHERE id = '%d'", (int) $id);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("DELETE FROM {islandora_content_model_forms} WHERE id = '%d'", (int) $id) */
+  db_delete('islandora_content_model_forms')
+  ->condition('id', (int) $id)
+  ->execute();
   drupal_set_message('Successfully removed association.');
   drupal_goto('admin/content/model/forms');
 }
 
 /**
  * Render the form for adding new associations.
- * 
- * @param array $form_state 
+ *
+ * @param array $form_state
  * @return array
  */
-function islandora_content_model_forms_list_form(array &$form_state) {
+function islandora_content_model_forms_list_form($form, array &$form_state) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $form_names = islandora_content_model_forms_get_form_names();
   $transforms = islandora_content_model_forms_get_transforms();
   $path = drupal_get_path('module', 'islandora_content_model_forms');
-  drupal_add_js("$path/js/fix-jquery-update.js", 'theme'); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
+  drupal_add_js("$path/js/fix-jquery-update.js", array('type' => 'file', 'weight' => JS_THEME)); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
 
   if (count($form_names) == 0) {
 
@@ -186,7 +197,7 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#ahah' => array(
           'path' => 'admin/content/model/forms/titles',
           'wrapper' => 'ahah-wrapper',
-        )
+        ),
       ),
       'title_field' => array(
         '#type' => 'select',
@@ -195,23 +206,23 @@ function islandora_content_model_forms_list_form(array &$form_state) {
         '#prefix' => '<div id="ahah-wrapper">',
         '#suffix' => '</div>',
         '#options' => islandora_content_model_forms_get_title_options($form_name),
-        '#required' => TRUE
+        '#required' => TRUE,
       ),
       'transform' => array(
         '#type' => 'select',
         '#title' => t('XSL Transform'),
         '#options' => $transforms,
-        '#description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.')
+        '#description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
       ),
       'file' => array(
         '#type' => 'file',
         '#title' => t('Upload Template Document'),
-        '#description' => t('A sample metadata file used to prepopulate the form on ingest.')
+        '#description' => t('A sample metadata file used to prepopulate the form on ingest.'),
       ),
       'submit' => array(
         '#type' => 'submit',
-        '#value' => 'Add Association'
-      )
+        '#value' => 'Add Association',
+      ),
     ),
   );
   return $form;
@@ -220,7 +231,7 @@ function islandora_content_model_forms_list_form(array &$form_state) {
 /**
  *
  * @param array $form
- * @param array $form_state 
+ * @param array $form_state
  */
 function islandora_content_model_forms_list_form_validate(array $form, array &$form_state) {
   $content_model_pid = $form_state['values']['content_model'];
@@ -233,8 +244,8 @@ function islandora_content_model_forms_list_form_validate(array $form, array &$f
 
 /**
  * Add a new association.
- * 
- * @param array $form_state 
+ *
+ * @param array $form_state
  */
 function islandora_content_model_forms_list_form_submit(array $form, array &$form_state) {
   $object = new stdClass();
@@ -271,7 +282,10 @@ function islandora_content_model_forms_get_content_model_names() {
  * @return string
  */
 function islandora_content_model_forms_query_content_models() {
-  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  //module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  require_once 'sites/all/libraries/tuque/HttpConnection.php';
+  $connection = new CurlConnection();
+  
   $offset = 0;
   $limit = 1000;
   $query = 'select $object  $model from <#ri>
@@ -284,7 +298,8 @@ function islandora_content_model_forms_query_content_models() {
   order by $object';
   $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
   $url .= "?type=tuples&flush=TRUE&format=Sparql&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . htmlentities(urlencode($query));
-  $content = trim(do_curl($url));
+  $response = $connection->getRequest($url);
+  $content = trim($response['content']);
   return $content != '' ? $content : NULL;
 }
 
@@ -315,18 +330,22 @@ function islandora_content_model_forms_parse_query($content) {
 
 /**
  * Gets a map of form names suitable for use as select #options.
- * 
+ *
  * @return array
  */
 function islandora_content_model_forms_get_form_names() {
   $form_names = array();
-  $result = db_query('SELECT name FROM {xml_forms}');
-  while ($data = db_fetch_object($result)) {
+  $result = db_query('SELECT name FROM {xml_forms}')->fetchAll();
+  foreach ($result AS $data) {
     $form_names[$data->name] = $data->name;
   }
   return $form_names;
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function islandora_content_model_forms_get_transforms() {
   return module_invoke_all('islandora_content_model_forms_get_transforms');
 }
@@ -354,7 +373,7 @@ function islandora_content_model_forms_islandora_content_model_forms_get_transfo
 
 /**
  * Autocomplete the content model name..
- * 
+ *
  * @param string $string
  * @return string
  */
@@ -362,18 +381,18 @@ function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $output = array();
   foreach ($content_models as $key => $value) {
-    if (preg_match("/^{$string}/i", $value) !== 0) {
+    if (preg_match("/{$string}/i", $value) !== 0) { //@TODO: removed match from start, test?
       $output[$key] = $value;
     }
   }
   $output[$string] = $string;
-  return drupal_json($output);
+  return drupal_json_output($output);
 }
 
 /**
  *
  * @param string $content_model
- * @return array 
+ * @return array
  */
 function islandora_content_model_get_form_names($content_model) {
   module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
@@ -390,22 +409,22 @@ function islandora_content_model_get_form_names($content_model) {
 /**
  *
  * @param string $content_model
- * @return string 
+ * @return string
  */
 function islandora_content_model_get_form_names_ahah($content_model) {
   $list = islandora_content_model_get_form_names($content_model);
-  return drupal_json($list);
+  return drupal_json_output($list);
 }
 
 /**
  *
  * @param string $content_model_pid
- * @param string $form_name 
+ * @param string $form_name
  */
 function islandora_content_model_association_exists($content_model_pid, $form_name) {
-  $result = db_query("SELECT id FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
-  while ($data = db_fetch_object($result)) {
-    if (isset($data->id)) {
+  $result = db_query("SELECT id FROM {islandora_content_model_forms} where content_model = :model AND form_name = :form_name", array(':model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
+  foreach ($result AS $data) {
+    if (isset($data)) {
       return TRUE;
     }
   }
@@ -416,7 +435,7 @@ function islandora_content_model_association_exists($content_model_pid, $form_na
  *
  * @param string $content_model_pid
  * @param string $form_name
- * @return string 
+ * @return string
  */
 function islandora_content_model_get_dsid($content_model_pid, $form_name) {
   $result = db_query("SELECT dsid FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
@@ -432,7 +451,7 @@ function islandora_content_model_get_dsid($content_model_pid, $form_name) {
  *
  * @param string $content_model_pid
  * @param string $form_name
- * @return string 
+ * @return string
  */
 function islandora_content_model_get_title_field($content_model_pid, $form_name) {
   $result = db_query("SELECT title_field FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
@@ -448,7 +467,7 @@ function islandora_content_model_get_title_field($content_model_pid, $form_name)
  *
  * @param type $content_model_pid
  * @param type $form_name
- * @return type 
+ * @return type
  */
 function islandora_content_model_get_template($content_model_pid, $form_name) {
   $result = db_query("SELECT template FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
@@ -464,27 +483,27 @@ function islandora_content_model_get_template($content_model_pid, $form_name) {
  *
  * @param string $content_model_pid
  * @param string $form_name
- * @return string 
+ * @return string
  */
 function islandora_content_model_get_transform($content_model_pid, $form_name) {
   $result = db_query("SELECT transform FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
   while ($data = db_fetch_object($result)) {
     if (isset($data->transform)) {
-      $xsl_file = "./{$data->transform}"; 
-    
+      $xsl_file = "./{$data->transform}";
+
       $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/{$data->transform}";
       if (!file_exists($xsl_file)) {
         $xsl_file = "./$old_transform_path";
-        
+
         if (file_exists($xsl_file)) {
-          watchdog('islandora_content_model_forms', 'Found the transform "@transform" in the legacy location. Transforms ' . 
+          watchdog('islandora_content_model_forms', 'Found the transform "@transform" in the legacy location. Transforms ' .
             'should be specified by a path relative to the server\'s document root.', array(
             '@transform' => $data->transform,
             '@old_dir' => $old_transform_path,
           ), WATCHDOG_WARNING);
         }
         else {
-          watchdog('islandora_content_model_forms', 'The XSLT transform to DC cannot be located as either "@transform"' . 
+          watchdog('islandora_content_model_forms', 'The XSLT transform to DC cannot be located as either "@transform"' .
             ' or "@old_dir"!.', array(
             '@transform' => $data->transform,
             '@old_dir' => $old_transform_path,
@@ -500,16 +519,16 @@ function islandora_content_model_get_transform($content_model_pid, $form_name) {
 
 /**
  *
- * @param string $form_name 
+ * @param string $form_name
  * @return array
  */
 function islandora_content_model_forms_get_title_options($form_name) {
   if (isset($form_name)) {
-    $result = db_query("SELECT form FROM {xml_forms} where name = '%s'", $form_name);
-    while ($data = db_fetch_object($result)) {
-      if (isset($data->form)) {
+    $result = db_query("SELECT form FROM {xml_forms} where name = :name", array(':name' => $form_name))->fetchCol();
+    foreach ($result AS $data) {
+      if (isset($data)) {
         $doc = new DOMDocument();
-        $doc->loadXML($data->form);
+        $doc->loadXML($data);
         $xpath = new DOMXPath($doc);
         $result = $xpath->query('//element[@name]');
         $elements = dom_node_list_to_array($result);
@@ -538,11 +557,15 @@ function islandora_content_model_forms_get_title_options($form_name) {
 }
 
 /**
- * 
+ *
  */
 function islandora_content_model_forms_ahah() {
   $form_build_id = $_REQUEST['form_build_id'];
-  $form_state = array('storage' => NULL, 'submitted' => FALSE, 'post' => $_POST);
+  $form_state = array(
+    'storage' => NULL,
+    'submitted' => FALSE,
+    'post' => $_POST,
+  );
   if (!$form = form_get_cache($form_build_id, $form_state)) {
     header("HTTP/1.0 200 OK", FALSE, 200);
     exit();
@@ -550,21 +573,22 @@ function islandora_content_model_forms_ahah() {
   $form_id = array_shift($form['#parameters']);
   $args = $form['#parameters'];
   $form['#post'] = $_POST;
-  $form['#redirect'] = FALSE;
+  $form_state['#redirect'] = FALSE;
   $form['#programmed'] = FALSE;
   $form_state['values'] = array();
   $form = form_builder($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  // TODO Please change this theme call to use an associative array for the $variables parameter.
   $data = theme('status_messages');
   $element = $form['fieldset']['title_field'];
   if (isset($element)) {
     unset($element['#prefix'], $element['#suffix']);
     $data = drupal_render($element);
   }
-  $javascript = drupal_add_js(NULL, NULL, 'header');
+  $javascript = drupal_add_js(NULL, array('type' => NULL));
   $settings = call_user_func_array('array_merge_recursive', $javascript['setting']);
   unset($settings['ahah']['']);
-  drupal_json(array(
+  drupal_json_output(array(
     'status' => TRUE,
     'data' => $data,
     'settings' => $settings,
