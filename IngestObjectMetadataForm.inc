@@ -24,6 +24,7 @@ class IngestObjectMetadataForm {
    * @return array
    */
   public function getPotentialContentModels($collection_pid, array &$form_state) {
+    /*
     $potential_models = array();
 
     //Add models from collection policy.
@@ -47,6 +48,8 @@ class IngestObjectMetadataForm {
         $potential_models["$identifier"] = "$name";
       }
     }
+    */
+    $potential_models = array('islandora:sp_pdf_collection' => 'PDF', 'islandora:compound' => 'Compound');
 
     return $potential_models;
   }
@@ -72,7 +75,8 @@ class IngestObjectMetadataForm {
     list($identifier, $name) = array_peek($potential_models);
     $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
     $identifier = isset($form_state['post']['models']) ? $form_state['post']['models'] : $identifier;
-    $content_model_pid = ContentModel::getPidFromIdentifier($identifier);
+    //$content_model_pid = ContentModel::getPidFromIdentifier($identifier);
+    $content_model_pid = 'islandora:sp_strict_pdf';
     $form_names = islandora_content_model_get_form_names($content_model_pid);
 
     $form = array();
@@ -109,11 +113,20 @@ class IngestObjectMetadataForm {
       '#options' => $potential_models,
       '#default_value' => $selected_model,
       '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a> '),
+      
+      '#ajax' => array(
+        'callback' => 'islandora_content_model_update_form_choice',
+        'wrapper' => 'content-form-choice',
+        'effect' => 'fade',
+      ),
+      
+    /*
       '#ahah' => array(
         'path' => 'islandora/form/update',
         'wrapper' => 'content-form-choice',
         'effect' => 'fade',
       ),
+      */
     );
 
     $form['indicator']['content_form_ahah_wrapper'] = array(
@@ -141,11 +154,13 @@ class IngestObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => $collection_pid,
     );
+    
     $form['submit'] = array(
       '#type' => 'submit',
-      '#submit' => array('fedora_repository_ingest_form_submit'),
+      '#submit' => array('islandora_content_model_ingest_form_submit'),
       '#value' => t('Next'),
     );
+    
     return $form;
   }
 
@@ -174,6 +189,7 @@ class IngestObjectMetadataForm {
       $form_name = key($form_names);
       $form_state['values']['forms'] = $form_name;
     }
+    //@TODO: islandora is no longer providing this
     if (empty($form_name)) {
       $ingestForm = new formClass();
       $form_state['storage']['content_model'] = $content_model;
@@ -350,6 +366,10 @@ class IngestObjectMetadataForm {
 
 }
 
+function islandora_content_model_update_form_choice($form, $form_state) {
+  return $form['indicator']['content_form_ahah_wrapper']['forms'];
+}
+/*
 function islandora_content_model_update_form_choice() {
   // prep only
   $form_state = array(
@@ -376,3 +396,4 @@ function islandora_content_model_update_form_choice() {
     'data' => $output,
   ));
 }
+*/
