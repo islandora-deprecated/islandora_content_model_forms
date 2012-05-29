@@ -197,7 +197,7 @@ class IngestObjectMetadataForm {
       return $ingestForm->createQDCIngestForm($collection_pid, $collection_label, $form_state);
     }
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
-
+  
     $xml = NULL;
     if (!empty($form_state['storage']['xml_data'])) {
       $xml = $form_state['storage']['xml_data'];
@@ -366,9 +366,6 @@ class IngestObjectMetadataForm {
 
 }
 
-function islandora_content_model_update_form_choice($form, $form_state) {
-  return $form['indicator']['content_form_ahah_wrapper']['forms'];
-}
 /*
 function islandora_content_model_update_form_choice() {
   // prep only

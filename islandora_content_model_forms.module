@@ -61,15 +61,15 @@ function islandora_content_model_forms_menu() {
 
   // ahah callback to update ingest form
   $items['islandora/form/update'] = array(
-    'page callback' => 'islandora_content_model_update_form_choice',
+    'page callback' => 'islandora_content_model_forms_update_form_choice',
     'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
-    'file' => 'IngestObjectMetadataForm.inc',
+    'file' => 'includes/ingest-form.inc',
     'type' => MENU_CALLBACK,
   );
   
   $items['islandora/ingest_form/%'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('islandora_content_model_get_ingest_form', 2),
+    'page arguments' => array('islandora_content_model_forms_get_ingest_form', 2),
     'access arguments' => array('access content'),
     'file' => 'includes/ingest-form.inc',
     'type' => MENU_CALLBACK,
@@ -170,13 +170,11 @@ function islandora_content_model_forms_get_transform_name($path) {
  * @param int $id
  */
 function islandora_content_model_forms_remove($id) {
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("DELETE FROM {islandora_content_model_forms} WHERE id = '%d'", (int) $id) */
   db_delete('islandora_content_model_forms')
   ->condition('id', (int) $id)
   ->execute();
-  drupal_set_message('Successfully removed association.');
-  drupal_goto('admin/content/model/forms');
+  drupal_set_message(t('Successfully removed association.'));
+  drupal_goto('admin/islandora/model/forms');
 }
 
 /**
@@ -200,6 +198,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
   $form_name = isset($form_state['values']['name']) ?
       $form_state['values']['name'] :
       key($form_names);
+
   $form = array(
     '#attributes' => array('enctype' => 'multipart/form-data'),
     'fieldset' => array(
@@ -226,9 +225,11 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
         '#description' => 'The name of the form to associate with the content model.',
         '#options' => $form_names,
         '#default_value' => $form_name,
-        '#ahah' => array(
-          'path' => 'admin/content/model/forms/titles',
+        '#ajax' => array(
+          'callback' => 'islandora_content_model_forms_ahah',
           'wrapper' => 'ahah-wrapper',
+          'effect' => 'fade',
+          'method' => 'replace',
         ),
       ),
       'title_field' => array(
@@ -471,11 +472,9 @@ function islandora_content_model_association_exists($content_model_pid, $form_na
  * @return string
  */
 function islandora_content_model_get_dsid($content_model_pid, $form_name) {
-  $result = db_query("SELECT dsid FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
-  while ($data = db_fetch_object($result)) {
-    if (isset($data->dsid)) {
-      return $data->dsid;
-    }
+  $result = db_query("SELECT dsid FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name", array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
+  if (!empty($result)) {
+    return $result[0];
   }
   return NULL;
 }
@@ -487,11 +486,10 @@ function islandora_content_model_get_dsid($content_model_pid, $form_name) {
  * @return string
  */
 function islandora_content_model_get_title_field($content_model_pid, $form_name) {
-  $result = db_query("SELECT title_field FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
-  while ($data = db_fetch_object($result)) {
-    if (isset($data->title_field)) {
-      return $data->title_field;
-    }
+  $result = db_query("SELECT title_field FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name", 
+    array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
+  if (!empty($result)) {
+    return $result[0];
   }
   return NULL;
 }
@@ -503,11 +501,10 @@ function islandora_content_model_get_title_field($content_model_pid, $form_name)
  * @return type
  */
 function islandora_content_model_get_template($content_model_pid, $form_name) {
-  $result = db_query("SELECT template FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
-  while ($data = db_fetch_object($result)) {
-    if (isset($data->template) && $data->template != '') {
-      return $data->template;
-    }
+  $result = db_query("SELECT template FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name",
+    array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
+  if (!empty($result) && $result[0] != '') {
+    return $result[0];
   }
   return NULL;
 }
@@ -519,26 +516,27 @@ function islandora_content_model_get_template($content_model_pid, $form_name) {
  * @return string
  */
 function islandora_content_model_get_transform($content_model_pid, $form_name) {
-  $result = db_query("SELECT transform FROM {islandora_content_model_forms} where content_model = '%s' AND form_name = '%s'", $content_model_pid, $form_name);
-  while ($data = db_fetch_object($result)) {
-    if (isset($data->transform)) {
-      $xsl_file = "./{$data->transform}";
+  $result = db_query("SELECT transform FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name", 
+    array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
+  foreach ($result AS $data) {
+    if (isset($data)) {
+      $xsl_file = "./{$data}";
 
-      $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/{$data->transform}";
+      $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/{$data}";
       if (!file_exists($xsl_file)) {
         $xsl_file = "./$old_transform_path";
 
         if (file_exists($xsl_file)) {
           watchdog('islandora_content_model_forms', 'Found the transform "@transform" in the legacy location. Transforms ' .
             'should be specified by a path relative to the server\'s document root.', array(
-            '@transform' => $data->transform,
+            '@transform' => $data,
             '@old_dir' => $old_transform_path,
           ), WATCHDOG_WARNING);
         }
         else {
           watchdog('islandora_content_model_forms', 'The XSLT transform to DC cannot be located as either "@transform"' .
             ' or "@old_dir"!.', array(
-            '@transform' => $data->transform,
+            '@transform' => $data,
             '@old_dir' => $old_transform_path,
           ), WATCHDOG_ERROR);
           return NULL;
@@ -592,38 +590,6 @@ function islandora_content_model_forms_get_title_options($form_name) {
 /**
  *
  */
-function islandora_content_model_forms_ahah() {
-  $form_build_id = $_REQUEST['form_build_id'];
-  $form_state = array(
-    'storage' => NULL,
-    'submitted' => FALSE,
-    'post' => $_POST,
-  );
-  if (!$form = form_get_cache($form_build_id, $form_state)) {
-    header("HTTP/1.0 200 OK", FALSE, 200);
-    exit();
-  }
-  $form_id = array_shift($form['#parameters']);
-  $args = $form['#parameters'];
-  $form['#post'] = $_POST;
-  $form_state['#redirect'] = FALSE;
-  $form['#programmed'] = FALSE;
-  $form_state['values'] = array();
-  $form = form_builder($form_id, $form, $form_state);
-  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  // TODO Please change this theme call to use an associative array for the $variables parameter.
-  $data = theme('status_messages');
-  $element = $form['fieldset']['title_field'];
-  if (isset($element)) {
-    unset($element['#prefix'], $element['#suffix']);
-    $data = drupal_render($element);
-  }
-  $javascript = drupal_add_js(NULL, array('type' => NULL));
-  $settings = call_user_func_array('array_merge_recursive', $javascript['setting']);
-  unset($settings['ahah']['']);
-  drupal_json_output(array(
-    'status' => TRUE,
-    'data' => $data,
-    'settings' => $settings,
-  ));
+function islandora_content_model_forms_ahah($form, $form_state) {
+  return $form['fieldset']['title_field'];
 }
