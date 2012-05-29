@@ -77,7 +77,6 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
     module_load_include('inc', 'islandora', 'includes/islandora.ingest');
     
     global $base_url;
-    dsm($_FILES);
     if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['type']['file_upload'] == 'text/xml') {
       $tmpDir = file_directory_path();
       if (!$file = file_save_upload('file_upload', array('file_validate_extensions' => array()), $tmpDir)) {
