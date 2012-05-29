@@ -70,8 +70,16 @@ function islandora_content_model_forms_menu() {
   $items['islandora/ingest_form/%'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_content_model_forms_get_ingest_form', 2),
-    'access arguments' => array('access content'),
-    'file' => 'includes/ingest-form.inc',
+    'access arguments' => array('access content'), //@TODO: perms
+    'file' => 'includes/ingest.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['islandora/edit_form/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_content_model_forms_get_edit_form', 2),
+    'access arguments' => array('access content'), //@TODO: perms
+    'file' => 'includes/edit.form.inc',
     'type' => MENU_CALLBACK,
   );
 
