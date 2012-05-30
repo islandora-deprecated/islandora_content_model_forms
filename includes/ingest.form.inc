@@ -339,7 +339,7 @@ function islandora_content_model_forms_update_form_choice($form, $form_state) {
   return $form['indicator']['content_form_ahah_wrapper'];
 }
 
-function islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state) {
+function islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state = array()) {
   module_load_include('inc', 'islandora', 'RestConnection');
   module_load_include('inc', 'islandora', 'includes/islandora.ingest');
   
