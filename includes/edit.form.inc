@@ -6,11 +6,14 @@ function islandora_content_model_forms_get_edit_form($form, &$form_state, $pid, 
     $form_state['storage']['xml'] = TRUE;
     $form = islandora_content_model_forms_edit_page_1($pid, $ds_id, $form_state);
   }
-  else if ($form_state['storage']['xml']) {
-    $form = islandora_content_model_forms_edit_page_2($pid, $form_state);
+  
+  if (isset($form_state['values']['forms'])) {
+    $page = 2;
+    $form_state['storage']['step'] = 2;
   }
-  else {
-    throw new Exception('Couldn\'t Create the Edit Form.');
+  
+  if ($page == 2 && $form_state['storage']['xml']) {
+    $form = islandora_content_model_forms_edit_page_2($pid, $form_state);
   }
     
   return $form;
@@ -96,7 +99,7 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
     );
   }
   else {
-    $form_state['values']['forms'] = $form_names[0];
+    $form_state['values']['forms'] = key($form_names);
   }
   
   return $form;
