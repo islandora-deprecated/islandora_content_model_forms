@@ -57,7 +57,7 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
 
           if ($fileObject) {
             $form_state['values']['ingest-file-location'] = $fileObject->uri;
-            $form_state['values']['ingest-file-location-id'] = $fileObject->id;
+            $form_state['values']['ingest-file-location-id'] = $fileObject->fid;
           }
         }
 
