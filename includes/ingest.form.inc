@@ -41,17 +41,13 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
         }
         // Get the uploaded file.
         
-        //module_load_include('inc', 'islandora', 'includes/datastream');
-        //$unused_dsids = islandora_get_unused_dsids($form_state['values']['pid']);	
-        //$types_allowed = $unused_dsids[$form_state['values']['dsid']];
         $arr = array();
-
         if (!empty($types_allowed)) {
  	      foreach ($types_allowed as $type) {
             $arr[] = $mimetype->getExtension($type);
  	      }
         }
-
+         
         if (!empty($_FILES['files']['name']['ingest-file-location'])) {
           $fileObject = file_save_upload('ingest-file-location', array('file_validate_extensions' => $arr));
 
@@ -116,14 +112,6 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
     $collection_policy_info = islandora_ingest_get_information($fedora_object);
     
     $relationship = $collection_policy_info['relationship'];
-
-    /*
-    if (empty($relationship)) {
-      if (!empty($form_state['storage']['parent_relation'])) {
-        $relationship = $form_state['storage']['parent_relation'];
-      }
-    }
-    */
     
     $object = islandora_ingest_get_object($collection_policy_info['models'], $collection_pid, $collection_policy_info['relationship'], 'islandora');
       $transform = islandora_content_model_get_transform($content_model_pid, $form_name);

@@ -77,7 +77,7 @@ function islandora_content_model_forms_menu() {
   
   $items['islandora/edit_form/%'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('islandora_content_model_forms_get_edit_form', 2),
+    'page arguments' => array('islandora_content_model_forms_get_edit_form', 2, 3),
     'access arguments' => array('access content'), //@TODO: perms
     'file' => 'includes/edit.form.inc',
     'type' => MENU_CALLBACK,
@@ -141,6 +141,33 @@ function islandora_content_model_forms_islandora_ingest_registry($collection_pid
     );
   }
   
+}
+
+/**
+ * Implements islandora_edit_datastream_registry
+ * 
+ * @param string $collection_pid
+ */
+function islandora_content_model_forms_islandora_edit_datastream_registry($object, $ds_id) {
+  module_load_include('inc', 'islandora_content_model_forms', 'includes/ingest.form');
+  $potential_models = $object->models;
+  
+  $form_names = array();
+  if (is_array($potential_models)) {
+    foreach ($potential_models AS $pid => $identifier) {
+      $form_names += islandora_content_model_get_form_names($pid, $ds_id);
+    }
+  }
+  
+  if (count($form_names) > 1) {
+    return array(
+      array(
+        'Name' => t('Islandora Content Model Forms'),
+        'url' => 'islandora/edit_form/' . $object->id . '/' . $ds_id, 
+        'weight' => 5,
+      ),
+    );
+  }
 }
 
 /**
@@ -440,16 +467,30 @@ function islandora_content_model_forms_autocomplete($string) {
  * @param string $content_model
  * @return array
  */
-function islandora_content_model_get_form_names($content_model) {
+function islandora_content_model_get_form_names($content_model, $ds = NULL) {
   module_load_include('inc', 'xml_form_builder', 'XMLFormDatabase');
   $list = array();
-  $result = db_query('SELECT * FROM {islandora_content_model_forms}')->fetchAll();
+  $query = db_select('islandora_content_model_forms', 'icmf')
+    ->fields('icmf', array('form_name', 'dsid', 'content_model'));
+    
+  if (!is_null($ds)) {
+    $query->condition('dsid', $ds);
+  }
+  $result = $query->execute();
   foreach ($result AS $data) {
     if ($data->content_model == $content_model && XMLFormDatabase::Valid($data->form_name)) {
       $list[$data->form_name] = "{$data->form_name}: ({$data->dsid})";
     }
   }
   return $list;
+}
+
+function islandora_content_model_forms_get_ids_for_form($form_name) {
+  $result = db_query("SELECT content_model, dsid FROM {islandora_content_model_forms} WHERE form_name = :form_name",
+    array(':form_name' => $form_name))->fetchAll();
+  foreach($result AS $data) {
+    return array($data->dsid, $data->content_model);
+  }
 }
 
 /**
