@@ -178,7 +178,10 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
       }
     
       islandora_content_model_forms_ingest_files($ingest_file_location, $object);
-      file_delete(file_load($form_state['values']['ingest-file-location-id']));
+      
+      if (isset($form_state['values']['ingest-file-location-id'])) {
+        file_delete(file_load($form_state['values']['ingest-file-location-id']));
+      }
       
       $form_state['storage'] = NULL;
     }
@@ -350,7 +353,7 @@ function islandora_content_model_forms_get_potential_content_models($collection_
     $potential_models[$model['pid']] = $model['name'];
   }
   
-  if ($content_models = $form_state['storage']['content_model']) {
+  if (isset($form_state['storage']['content_model']) && $content_models = $form_state['storage']['content_model']) {
     $content_models = (array) $content_models;
     foreach ($content_models as $content_model_pid) {
       $content_model = new FedoraObject($content_model_pid, $restConnection->repository);

@@ -337,7 +337,7 @@ function islandora_content_model_forms_query_content_models() {
   minus $object <mulgara:is><info:fedora/fedora-system:ServiceDefinition-3.0>
   minus $object <mulgara:is><info:fedora/fedora-system:ServiceDeployment-3.0>
   order by $object';
-  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $url = variable_get('islandora_repository_url', 'http://localhost:8080/fedora/risearch');
   $url .= "?type=tuples&flush=TRUE&format=Sparql&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . htmlentities(urlencode($query));
   $response = $connection->getRequest($url);
   $content = trim($response['content']);

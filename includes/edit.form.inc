@@ -44,14 +44,13 @@ function islandora_content_model_forms_edit_form_submit($form, &$form_state) {
     module_load_include('inc', 'islandora', 'RestConnection');
     $restConnection = new RestConnection($user);
     $object = new FedoraObject($pid, $restConnection->repository);
+    $object->label = $label;
     
     $xml_ds = new FedoraDatastream($dsid, $object, $restConnection->repository);
     $xml_ds->setContentFromString($document->saveXML());
     
     $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
-    
     $dc_doc = islandora_content_model_forms_transform_document($transform, $document, $object);
-    
     $dc_ds = new FedoraDatastream('DC', $object, $restConnection->repository);
     $dc_ds->setContentFromString($dc_doc->saveXML());
     
@@ -107,6 +106,11 @@ function islandora_content_model_forms_edit_page_2($pid, &$form_state) {
     $xml = $fedora_object[$dsid];
     
     $form = xml_form_builder_get_form($form_state, $form_name, $xml->content);
+    
+    $form['content_model_pid'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['values']['content_model_pid'],
+    );
     $form['forms'] = array(
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms'],
