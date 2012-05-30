@@ -121,21 +121,26 @@ function islandora_content_model_forms_theme() {
  */
 
 function islandora_content_model_forms_islandora_ingest_registry($collection_pid) {
-  /*
-  module_load_include('inc', 'islandora_content_model_forms', 'IngestObjectMetadataForm');
-  $ingest_forms = new IngestObjectMetadataForm();
-  $form_state = array();
-  //$potential_forms = $ingest_forms->getPotentialContentModels($collection_pid, $form_state);
-
-  //$potential_forms = array('')
-  if (!empty($potential_forms)) {
-    $forms = array();
-    foreach ($potential_forms AS $form) {
-      //$forms[] = array('');
+  module_load_include('inc', 'islandora_content_model_forms', 'includes/ingest.form');
+  $potential_models = islandora_content_model_forms_get_potential_content_models($collection_pid);
+  
+  $form_names = array();
+  if (is_array($potential_models)) {
+    foreach ($potential_models AS $pid => $identifier) {
+      $form_names += islandora_content_model_get_form_names($pid);
     }
   }
-  */
-  return array(array('Name' => 'Content Model Forms', 'url' => 'islandora/ingest_form/' . $collection_pid, 'weight' => 5));
+  
+  if (count($form_names) > 1) {
+    return array(
+      array(
+        'Name' => t('Islandora Content Model Forms'),
+        'url' => 'islandora/ingest_form/' . $collection_pid, 
+        'weight' => 5,
+      ),
+    );
+  }
+  
 }
 
 /**
@@ -440,7 +445,6 @@ function islandora_content_model_get_form_names($content_model) {
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}')->fetchAll();
   foreach ($result AS $data) {
-  //while ($data = db_fetch_object($result)) {
     if ($data->content_model == $content_model && XMLFormDatabase::Valid($data->form_name)) {
       $list[$data->form_name] = "{$data->form_name}: ({$data->dsid})";
     }
