@@ -128,8 +128,8 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
       $object->state = $state;
-      $object = islandora_ingest_add_object($object);
       
+      $object->repository->ingestObject($object);
       $ds = $object->constructDatastream($dsid, 'M');
       $ds->setContentFromString($document->saveXML());
       $ds->label = $dsid . ' Record';
@@ -175,6 +175,7 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
     }
       
     $form_state['redirect'] = "islandora/object/{$collection_pid}";
+    $object = islandora_ingest_add_object($object);
   
 }
 
