@@ -159,7 +159,7 @@ function islandora_content_model_forms_islandora_edit_datastream_registry($objec
     }
   }
   
-  if (count($form_names) > 1) {
+  if (count($form_names) > 0) {
     return array(
       array(
         'Name' => t('Islandora Content Model Forms'),
