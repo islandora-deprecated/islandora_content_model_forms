@@ -1,8 +1,10 @@
 <?php
 
 function islandora_content_model_forms_get_ingest_form($form, &$form_state, $collection_pid) {
+  module_load_include('module', 'islandora', 'islandora');
   $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
-  $collection_label = 'test'; //@TODO: collection label
+  $collection_object = islandora_get_object($collection_pid);
+  $collection_label = $collection_object->label;
   if ($page == 1) {
     $form_state['storage']['xml'] = TRUE;
     $form_state['storage']['collection_pid'] = $collection_pid;
@@ -179,6 +181,8 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
 function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_pid, $collection_label) {
   $potential_models = islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state);
   unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
+  unset($potential_models['islandora:collectionCModel']);
+  
   list($identifier, $name) = array_peek($potential_models);
   $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
   $content_model_pid = $selected_model;
@@ -186,7 +190,7 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
   $form_names = islandora_content_model_get_form_names($content_model_pid);
 
   $form = array();
-
+  var_dump($potential_models);
   if (count($potential_models) == 0) {
     if (!user_access('manage collections')) {
       $message = t('This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.');
