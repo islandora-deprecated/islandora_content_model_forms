@@ -167,16 +167,16 @@ function islandora_content_model_forms_edit_form_submit($form, &$form_state) {
   $document = $doc->document;
   
   module_load_include('inc', 'islandora', 'RestConnection');
-  $restConnection = new RestConnection($user);
-  $object = new FedoraObject($pid, $restConnection->repository);
+  $rest_connection = new RestConnection($user);
+  $object = new FedoraObject($pid, $rest_connection->repository);
   $object->label = $label;
   
-  $xml_ds = new FedoraDatastream($dsid, $object, $restConnection->repository);
+  $xml_ds = new FedoraDatastream($dsid, $object, $rest_connection->repository);
   $xml_ds->setContentFromString($document->saveXML());
   
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
   $dc_doc = islandora_content_model_forms_transform_document($transform, $document, $object);
-  $dc_ds = new FedoraDatastream('DC', $object, $restConnection->repository);
+  $dc_ds = new FedoraDatastream('DC', $object, $rest_connection->repository);
   $dc_ds->setContentFromString($dc_doc->saveXML());
   
   $form_state['storage'] = NULL;

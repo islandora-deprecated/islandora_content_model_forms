@@ -231,7 +231,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
   $transforms = islandora_content_model_forms_get_transforms();
 
   if (count($form_names) == 0) {
-    drupal_set_message('No forms defined, both forms and content models must be defined to add new associations.', 'error');
+    drupal_set_message(t('No forms defined, both forms and content models must be defined to add new associations.'), 'error');
     return;
   }
   $form_name = isset($form_state['values']['name']) ?
@@ -379,7 +379,7 @@ function islandora_content_model_forms_query_content_models() {
  */
 function islandora_content_model_forms_parse_query($content) {
   $content_models = array();
-  foreach($content as $model) {
+  foreach ($content as $model) {
     $content_models[] = $model['object']['value'];
   }
   $content_models = array_unique($content_models);
@@ -476,7 +476,7 @@ function islandora_content_model_get_form_names($content_model, $ds = NULL) {
 function islandora_content_model_forms_get_ids_for_form($form_name) {
   $result = db_query("SELECT content_model, dsid FROM {islandora_content_model_forms} WHERE form_name = :form_name",
     array(':form_name' => $form_name))->fetchAll();
-  foreach($result AS $data) {
+  foreach ($result AS $data) {
     return array($data->dsid, $data->content_model);
   }
 }
