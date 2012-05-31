@@ -12,7 +12,7 @@ module_load_include('inc', 'php_lib', 'Array');
 /**
  * Constants
  */
-define("PERM_ADMIN_FORM_ASSOCIATION", 'Admin Form Associations');
+define("PERM_ADMIN_FORM_ASSOCIATION", 'Administer Form Associations');
 
 /**
  * Implementation of Hook Menu.
@@ -67,18 +67,20 @@ function islandora_content_model_forms_menu() {
     'type' => MENU_CALLBACK,
   );
   
+  // Ingest form implementation callback
   $items['islandora/ingest_form/%'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_content_model_forms_get_ingest_form', 2),
-    'access arguments' => array('access content'), //@TODO: perms
+    'access arguments' => array(FEDORA_INGEST),
     'file' => 'includes/ingest.form.inc',
     'type' => MENU_CALLBACK,
   );
   
+  // Edit form implementation callback
   $items['islandora/edit_form/%'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_content_model_forms_get_edit_form', 2, 3),
-    'access arguments' => array('access content'), //@TODO: perms
+    'access arguments' => array(FEDORA_METADATA_EDIT),
     'file' => 'includes/edit.form.inc',
     'type' => MENU_CALLBACK,
   );
@@ -95,13 +97,13 @@ function islandora_content_model_forms_permission() {
   return array(
     PERM_ADMIN_FORM_ASSOCIATION => array(
       'title' => t(PERM_ADMIN_FORM_ASSOCIATION),
-      'description' => t('TODO Add a description for PERM_ADMIN_FORM_ASSOCIATION'),
+      'description' => t('Associate XML Forms and XSLT with Islandora content models and datastreams.'),
     ),
   );
 }
 
 /**
- * Implements Hook Theme. Registers themes.
+ * Implements hook_theme
  *
  * @return array
  */
@@ -109,13 +111,14 @@ function islandora_content_model_forms_theme() {
   return array(
     'list' => array(
       'variables' => array('list' => NULL, 'form' => NULL),
-      'template' => 'List',
+      'template' => 'list',
+      'path' => drupal_get_path('module', 'islandora_content_model_forms') . '/templates',
     ),
   );
 }
 
 /**
- * Implements islandora_ingest_registry
+ * Implements hook_islandora_ingest_registry
  * 
  * @param string $collection_pid
  */
@@ -140,11 +143,10 @@ function islandora_content_model_forms_islandora_ingest_registry($collection_pid
       ),
     );
   }
-  
 }
 
 /**
- * Implements islandora_edit_datastream_registry
+ * Implements hook_islandora_edit_datastream_registry
  * 
  * @param string $collection_pid
  */
@@ -227,11 +229,8 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $form_names = islandora_content_model_forms_get_form_names();
   $transforms = islandora_content_model_forms_get_transforms();
-  $path = drupal_get_path('module', 'islandora_content_model_forms');
-  drupal_add_js("$path/js/fix-jquery-update.js", array('type' => 'file', 'weight' => JS_THEME)); // Hacktacular, fixes issues between jquery update file uploads and AHAH.
 
   if (count($form_names) == 0) {
-
     drupal_set_message('No forms defined, both forms and content models must be defined to add new associations.', 'error');
     return;
   }
@@ -240,29 +239,28 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
       key($form_names);
 
   $form = array(
-    '#attributes' => array('enctype' => 'multipart/form-data'),
     'fieldset' => array(
       '#type' => 'fieldset',
-      '#title' => 'Add Association',
+      '#title' => t('Add Association'),
       'content_model' => array(
         '#type' => 'textfield',
-        '#title' => 'Content Model',
+        '#title' => t('Content Model'),
         '#required' => TRUE,
         '#autocomplete_path' => 'admin/islandora/model/forms/autocomplete',
-        '#description' => 'The content model to associate with a form.<br/> If the content model has no decendants it will not show up in autocomplete.',
+        '#description' => t('The content model to associate with a form. If the content model has no decendants it will not show up in autocomplete.'),
         '#default_value' => isset($form_state['values']['content_model']) ? $form_state['values']['content_model'] : NULL,
       ),
       'dsid' => array(
         '#type' => 'textfield',
-        '#description' => 'The datastream ID of where the objects metadata is stored.<br/>&nbsp',
-        '#title' => 'Metadata Datastream ID',
+        '#description' => t('The datastream ID of where the objects metadata is stored.'),
+        '#title' => t('Metadata Datastream ID'),
         '#required' => TRUE,
         '#default_value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : NULL,
       ),
       'name' => array(
         '#type' => 'select',
-        '#title' => 'Form Name',
-        '#description' => 'The name of the form to associate with the content model.',
+        '#title' => t('Form Name'),
+        '#description' => t('The name of the form to associate with the content model.'),
         '#options' => $form_names,
         '#default_value' => $form_name,
         '#ajax' => array(
@@ -274,8 +272,8 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
       ),
       'title_field' => array(
         '#type' => 'select',
-        '#title' => 'Title Field',
-        '#description' => 'The form field that you want to use for the objects label.',
+        '#title' => t('Title Field'),
+        '#description' => t('The form field that you want to use for the objects label.'),
         '#prefix' => '<div id="ahah-wrapper">',
         '#suffix' => '</div>',
         '#options' => islandora_content_model_forms_get_title_options($form_name),
@@ -294,7 +292,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
       ),
       'submit' => array(
         '#type' => 'submit',
-        '#value' => 'Add Association',
+        '#value' => t('Add Association'),
       ),
     ),
   );
@@ -302,7 +300,8 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
 }
 
 /**
- *
+ * Form list form validation.
+ * 
  * @param array $form
  * @param array $form_state
  */
@@ -335,10 +334,10 @@ function islandora_content_model_forms_list_form_submit(array $form, array &$for
     $object->template = $definition->saveXML();
   }
   if (drupal_write_record('islandora_content_model_forms', $object) !== FALSE) {
-    drupal_set_message('Successfully added association.');
+    drupal_set_message(t('Successfully added association.'));
   }
   else {
-    drupal_set_message('Failed to add association.', 'error');
+    drupal_set_message(t('Failed to add association.'), 'error');
   }
 }
 
@@ -355,7 +354,6 @@ function islandora_content_model_forms_get_content_model_names() {
  * @return string
  */
 function islandora_content_model_forms_query_content_models() {
-  //module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
   require_once 'sites/all/libraries/tuque/HttpConnection.php';
   $connection = new CurlConnection();
   
@@ -377,7 +375,7 @@ function islandora_content_model_forms_query_content_models() {
 }
 
 /**
- *
+ * 
  * @param string $content
  * @return array
  */
@@ -393,7 +391,7 @@ function islandora_content_model_forms_parse_query($content) {
       $count = $results->length;
       for ($i = 0; $i < $count; $i++) {
         $result = $results->item($i);
-        $pid = substr($path->query('sparql:object/@uri', $result)->item(0)->value, 12); // 12 characteres in "info:fedora/"
+        $pid = substr($path->query('sparql:object/@uri', $result)->item(0)->value, 12); // 12 characters in "info:fedora/"
         $content_models[$pid] = $pid;
       }
     }
@@ -463,7 +461,8 @@ function islandora_content_model_forms_autocomplete($string) {
 }
 
 /**
- *
+ * Get form names, optional condition on datastream ID.
+ * 
  * @param string $content_model
  * @return array
  */
@@ -641,7 +640,7 @@ function islandora_content_model_forms_get_title_options($form_name) {
 }
 
 /**
- *
+ *  Title field callback for form association form.
  */
 function islandora_content_model_forms_ahah($form, $form_state) {
   return $form['fieldset']['title_field'];
