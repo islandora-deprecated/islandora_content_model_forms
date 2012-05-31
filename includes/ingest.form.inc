@@ -25,7 +25,7 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
     $form_state['storage']['collection_pid'] = $collection_pid;
     $form = islandora_content_model_forms_ingest_page_1($form_state, $collection_pid, $collection_object->label);
   }
-  else if ($form_state['storage']['xml']) {
+  elseif ($form_state['storage']['xml']) {
     $form_state['storage']['content_model'] = $form_state['values']['models'];
     $form = islandora_content_model_forms_ingest_page_2($form_state, $collection_pid, $collection_object->label);
   }
@@ -64,7 +64,7 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
         $message = t('Select the %manage tab to add content models or child collections to this collection', array('%manage' => 'Manage This Collection')); //XXX: Should get the value from the collection manager?
       }
       else {
-        $collection_link = l("Islandora Collection Manager", "https://wiki.duraspace.org/display/ISLANDORA6121/Collection+Manager");
+        $collection_link = l(t("Islandora Collection Manager"), "https://wiki.duraspace.org/display/ISLANDORA6121/Collection+Manager");
         $message = t('This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.<br />
                       We strongly recommend enabling the !collection_link module for managing collection objects.', array('!collection_link' => $collection_link));
       }
@@ -471,8 +471,8 @@ function _islandora_content_model_forms_get_file_attributes($file) {
   }
   $path = implode('/', $parts);
   $file_url = $base_url . '/' . $path;
-  $beginIndex = strrpos($file_url, '/');
-  $dtitle = substr($file_url, $beginIndex + 1);
+  $begin_index = strrpos($file_url, '/');
+  $dtitle = substr($file_url, $begin_index + 1);
   $dtitle = urldecode($dtitle);
   return array($dtitle, $mime_type);
 }
