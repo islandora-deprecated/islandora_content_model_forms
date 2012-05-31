@@ -190,7 +190,6 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
   $form_names = islandora_content_model_get_form_names($content_model_pid);
 
   $form = array();
-  var_dump($potential_models);
   if (count($potential_models) == 0) {
     if (!user_access('manage collections')) {
       $message = t('This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.');
