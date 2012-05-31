@@ -1,18 +1,33 @@
 <?php
+/**
+ * @file
+ * Ingest form callback and related functions.
+ */
 
+/**
+ * Multi-step ingest form callback.
+ * Step 1: determine desired XML form.
+ * Step 2: render XML form.
+ * 
+ * @param $form
+ * @param $form_state
+ * @param $collection_pid
+ * @throws Exception
+ */
 function islandora_content_model_forms_get_ingest_form($form, &$form_state, $collection_pid) {
   module_load_include('module', 'islandora', 'islandora');
   $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
   $collection_object = islandora_get_object($collection_pid);
   $collection_label = $collection_object->label;
+
   if ($page == 1) {
     $form_state['storage']['xml'] = TRUE;
     $form_state['storage']['collection_pid'] = $collection_pid;
-    $form = islandora_content_model_forms_ingest_page_1($form_state, $collection_pid, $collection_label);
+    $form = islandora_content_model_forms_ingest_page_1($form_state, $collection_pid, $collection_object->label);
   }
   else if ($form_state['storage']['xml']) {
     $form_state['storage']['content_model'] = $form_state['values']['models'];
-    $form = islandora_content_model_forms_ingest_page_2($form_state, $collection_pid, $collection_label);
+    $form = islandora_content_model_forms_ingest_page_2($form_state, $collection_pid, $collection_object->label);
   }
   else {
     throw new Exception("Couldn't Create the Ingest Form.");
@@ -21,6 +36,7 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
   return $form;
 }
 
+<<<<<<< HEAD
 function islandora_content_model_forms_get_ingest_form_validate($form, &$form_state) {
   //only validate the form if the submit button was pressed (other buttons may be used for AHAH)
   if (!$form_state['submitted']) {
@@ -181,6 +197,15 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   }
 }
 
+=======
+/**
+ * Ingest form step 1.
+ * 
+ * @param $form_state
+ * @param $collection_pid
+ * @param $collection_label
+ */
+>>>>>>> 30060a122c55e4356947beb2738da70fd389d3f5
 function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_pid, $collection_label) {
   $potential_models = islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state);
   unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
@@ -269,9 +294,14 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
   return $form;
 }
 
+/**
+ * Ingest form step 2.
+ * 
+ * @param $form_state
+ * @param $collection_pid
+ * @param $collection_label
+ */
 function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_pid, $collection_label) {
-  $path = drupal_get_path('module', 'islandora_content_model_forms');
-
   $content_model_pid = $form_state['values']['models'];
   $content_model_dsid = $content_model_pid; //@TODO: check what this should be
 
@@ -327,17 +357,196 @@ function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_p
   return $form;
 }
 
+/**
+ * Ingest form validation.
+ * 
+ * @param $form
+ * @param $form_state
+ */
+function islandora_content_model_forms_get_ingest_form_validate($form, &$form_state) {
+  // Only validate the form if the submit button was pressed (other buttons may be used for AJAX)
+  if (!$form_state['submitted']) {
+    return;
+  }
+  
+  // Check for submission was here. Seems to be not needed now?
+  switch ($form_state['storage']['step']) {
+    case 1:
+      $form_state['storage']['step']++;
+      $form_state['rebuild'] = TRUE;
+      break;
+
+    case 2:
+      // XML based form.
+      if ($form_state['storage']['xml']) {
+        module_load_include('inc', 'xml_form_api', 'XMLForm');
+        $xml_form = new XMLForm($form_state);
+        $xml_form->validate($form, $form_state);
+      }
+      
+      // Handle uploaded files.
+      $arr = array();
+      /*
+      if (!empty($types_allowed)) {
+        foreach ($types_allowed as $type) {
+          $arr[] = $mimetype->getExtension($type);
+        }
+      }
+      */
+
+      if (!empty($_FILES['files']['name']['ingest-file-location'])) {
+        $file_object = file_save_upload('ingest-file-location', array('file_validate_extensions' => $arr));
+
+        if ($file_object) {
+          $form_state['values']['ingest-file-location'] = $file_object->uri;
+          $form_state['values']['ingest-file-location-id'] = $file_object->fid;
+        }
+      }
+      $form_state['rebuild'] = FALSE;
+      break;
+  }
+}
+
+/**
+ * Ingest form submit.
+ * 
+ * @param $form
+ * @param $form_state
+ */
+function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
+  // Only submit the form if the submit button was pressed (other buttons may be used for AJAX)
+  if (!$form_state['submitted']) {
+    return;
+  }
+
+  module_load_include('inc', 'xml_form_api', 'XMLForm');
+  module_load_include('inc', 'islandora', 'includes/islandora.ingest');
+  module_load_include('inc', 'islandora', 'RestConnection');
+  global $base_url, $user;
+  
+  if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['type']['file_upload'] == 'text/xml') {
+    $tmp_dir = file_directory_path();
+    if (!$file = file_save_upload('file_upload', array('file_validate_extensions' => array()), $tmp_dir)) {
+      drupal_set_message(t('No XML file loaded'), 'warning');
+      return;
+    }
+    $file = "$tmp_dir/{$file->filename}";
+    $xml_file = file_get_contents($file);
+    $document = DOMDocument::loadXml($xml_file);
+    unlink($file);
+    if (!$document) {
+      drupal_set_message(t('This does not appear to be a valid XML file'), 'warning');
+      return;
+    }
+  }
+  else {
+    $xml_form = new XMLForm($form_state);
+    $doc = $xml_form->submit($form, $form_state);
+    $document = $doc->document;
+  }
+
+  $collection_pid = $form_state['values']['collection_pid'];
+  $content_model_pid = $form_state['values']['content_model_pid'];
+  $content_model_dsid = $form_state['values']['content_model_dsid'];
+  $dsid = $form_state['values']['dsid'];
+  $form_name = $form_state['values']['forms'];
+  $should_redirect = TRUE;
+
+  $relationship = NULL;
+  $pid = NULL;
+
+  $rest_connection = new RestConnection($user);
+  $fedora_object = new FedoraObject($collection_pid, $rest_connection->repository);
+  $collection_policy_info = islandora_ingest_get_information($fedora_object);
+
+  $relationship = $collection_policy_info['relationship'];
+
+  $object = islandora_ingest_get_object($collection_policy_info['models'], $collection_pid, $collection_policy_info['relationship'], 'islandora');
+  $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
+  $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
+  eval('$label = $form_state[\'values\']' . $label_field . ';');
+
+  $object->label = substr($label, 0, 256);
+  $object->owner = $user->name;
+
+  if (!isset($form['#post']['active-toggle'])) {
+    $state = 'A';
+  }
+  else {
+    $state = $form['#post']['active-toggle'] ? 'A' : 'I';
+  }
+  $object->state = $state;
+
+  $ds = $object->constructDatastream($dsid, 'X');
+  $ds->setContentFromString($document->saveXML());
+  $ds->label = $dsid . ' Record';
+  $object->ingestDatastream($ds);
+
+  if ($dsid != 'DC') {
+    $dc_ds = $object->constructDatastream('DC', 'X');
+    $dc_ds->label = 'DC Record';
+    $object->ingestDatastream($dc_ds);
+    $dc_doc = islandora_content_model_forms_transform_document($transform, $document, $object);
+    $dc_ds->setContentFromString($dc_doc->saveXML());
+  }
+
+  if (!empty($relationship) && !empty($object->id)) {
+
+    // added ne functionality to static thumbnails to objects if values are provided in forms
+    $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
+    $image_dir = isset($form_state['values']['image_directory']) ? $form_state['values']['image_directory'] : NULL;
+    $thumbnail_file = isset($form_state['values']['thumbnail_file']) ? $form_state['values']['thumbnail_file'] : NULL;
+
+    if ($module && $thumbnail_file) {
+      $stored_thumbnail = drupal_get_path('module', $module) . "/$image_dir/$thumbnail_file";
+      $stored_thumbnail = preg_replace('/\/\//', '/', $stored_thumbnail);
+      file_copy($stored_thumbnail, file_directory_path());
+      $thumbnail = file_directory_path() . '/' . $thumbnail_file;
+      $_SESSION['fedora_ingest_files']['TN'] = $thumbnail;
+    }
+
+    $uploaded_file = isset($form_state['values']['ingest-file-location']) && trim($form_state['values']['ingest-file-location']) !== '';
+    $ingest_file_location = $uploaded_file ? $form_state['values']['ingest-file-location'] : NULL;
+    if (isset($ingest_file_location)) {
+      $ingest_file_location = is_array($ingest_file_location) ? $ingest_file_location : array('OBJ' => $ingest_file_location);
+    }
+
+    islandora_content_model_forms_ingest_files($ingest_file_location, $object);
+
+    $form_state['storage'] = NULL;
+  }
+
+  $form_state['redirect'] = "islandora/object/{$collection_pid}";
+  $object = islandora_ingest_add_object($object);
+
+  if (isset($form_state['values']['ingest-file-location-id'])) {
+    file_delete(file_load($form_state['values']['ingest-file-location-id']));
+  }
+}
+
+/**
+ * AJAX callback for step 1 form selection.
+ * 
+ * @param $form
+ * @param $form_state
+ */
 function islandora_content_model_forms_update_form_choice($form, $form_state) {
   return $form['indicator']['content_form_ahah_wrapper'];
 }
 
+/**
+ * Get content models associated with a collection.
+ * 
+ * @param $collection_pid
+ * @param $form_state
+ */
 function islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state = array()) {
   module_load_include('inc', 'islandora', 'RestConnection');
   module_load_include('inc', 'islandora', 'includes/islandora.ingest');
-
   global $user;
-  $restConnection = new RestConnection($user);
-  $fedora_object = new FedoraObject($collection_pid, $restConnection->repository);
+  
+  $rest_connection = new RestConnection($user);
+  $fedora_object = new FedoraObject($collection_pid, $rest_connection->repository);
   $info = islandora_ingest_get_information($fedora_object);
 
   $potential_models = array();
@@ -348,7 +557,7 @@ function islandora_content_model_forms_get_potential_content_models($collection_
   if (isset($form_state['storage']['content_model']) && $content_models = $form_state['storage']['content_model']) {
     $content_models = (array) $content_models;
     foreach ($content_models as $content_model_pid) {
-      $content_model = new FedoraObject($content_model_pid, $restConnection->repository);
+      $content_model = new FedoraObject($content_model_pid, $rest_connection->repository);
       $potential_models["$content_model_pid"] = $content_model->label;
     }
   }
@@ -356,6 +565,13 @@ function islandora_content_model_forms_get_potential_content_models($collection_
   return $potential_models;
 }
 
+/**
+ * Transform form generated XML.
+ * 
+ * @param $transform
+ * @param $source_document
+ * @param $object
+ */
 function islandora_content_model_forms_transform_document($transform, $source_document, $object) {
   if ($transform !== NULL) {
     $xsl = new DOMDocument();
@@ -379,6 +595,12 @@ function islandora_content_model_forms_transform_document($transform, $source_do
   return NULL;
 }
 
+/**
+ * Add a managed datastream to an object based on an uploaded file.
+ * 
+ * @param $ingest_file_locations
+ * @param $object
+ */
 function islandora_content_model_forms_ingest_files($ingest_file_locations, $object) {
   if (empty($ingest_file_locations) || count($ingest_file_locations) === 0) {
     return;
@@ -395,9 +617,14 @@ function islandora_content_model_forms_ingest_files($ingest_file_locations, $obj
   }
 }
 
+/**
+ * Determine a title and mimetype for a file.
+ * 
+ * @param $file
+ */
 function _islandora_content_model_forms_get_file_attributes($file) {
-  global $base_url;
   module_load_include('inc', 'islandora', 'includes/MimeClass');
+  global $base_url;
 
   $mime = new MimeClass();
   $mime_type = $mime->getMimetype($file);
@@ -412,20 +639,3 @@ function _islandora_content_model_forms_get_file_attributes($file) {
   $dtitle = urldecode($dtitle);
   return array($dtitle, $mime_type);
 }
-
-/*
-  function islandora_content_model_forms_content_model_get_mimetypes($pid) {
-  global $user;
-  module_load_include('inc', 'islandora', 'RestConnection');
-  $restConnection = new RestConnection($user);
-  $fedora_object = new FedoraObject($collection_pid, $restConnection->repository);
-
-  $result = $this->xml->getElementsByTagName('mimetypes');
-  $result = $result->item(0)->getElementsByTagName('type');
-  $mimes = array();
-  for ($i = 0; $i < $result->length; $i++) {
-  $mimes[] = trim($result->item($i)->nodeValue);
-  }
-  return $mimes;
-  }
- */
