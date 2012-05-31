@@ -135,7 +135,8 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   $object->ingestDatastream($ds);
 
   if($dsid != 'DC') {
-    $dc_ds = $object->constructDatastream('DC', 'X');
+    $dc_ds = $object->constructDatastream('DC', 'M');
+    $dc_ds->label = 'DC Record';
     $object->ingestDatastream($dc_ds);
     $dc_doc = islandora_content_model_forms_transform_document($transform, $document, $object);
     $dc_ds->setContentFromString($dc_doc->saveXML());
