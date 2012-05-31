@@ -56,7 +56,8 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
   }
   
   if (empty($form_names)) {
-    throw new Exception('Couldn\'t Create Page One of the Edit Form.');
+    drupal_set_message(t('No forms are associated. Please associate a form and try again.'), 'warning');
+    drupal_goto("islandora/object/$pid");
   }
   
   $form = array();

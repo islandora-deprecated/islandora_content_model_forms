@@ -153,10 +153,10 @@ function islandora_content_model_forms_islandora_ingest_registry($collection_pid
 function islandora_content_model_forms_islandora_edit_datastream_registry($object, $ds_id) {
   module_load_include('inc', 'islandora_content_model_forms', 'includes/ingest.form');
   $potential_models = $object->models;
-  
+
   $form_names = array();
   if (is_array($potential_models)) {
-    foreach ($potential_models AS $pid => $identifier) {
+    foreach ($potential_models AS $pid) {
       $form_names += islandora_content_model_get_form_names($pid, $ds_id);
     }
   }
