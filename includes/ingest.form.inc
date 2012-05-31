@@ -114,8 +114,10 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   $collection_policy_info = islandora_ingest_get_information($fedora_object);
 
   $relationship = $collection_policy_info['relationship'];
+  
+  $content_models = array(array('pid' => $content_model_pid));
 
-  $object = islandora_ingest_get_object($collection_policy_info['models'], $collection_pid, $collection_policy_info['relationship'], 'islandora');
+  $object = islandora_ingest_get_object($content_models, $collection_pid, $collection_policy_info['relationship'], 'islandora');
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
   $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
   eval('$label = $form_state[\'values\']' . $label_field . ';');
@@ -171,6 +173,7 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   }
 
   $form_state['redirect'] = "islandora/object/{$collection_pid}";
+
   $object = islandora_ingest_add_object($object);
 
   if (isset($form_state['values']['ingest-file-location-id'])) {
