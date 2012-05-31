@@ -355,12 +355,10 @@ function islandora_content_model_forms_get_content_model_names() {
  * @return string
  */
 function islandora_content_model_forms_query_content_models() {
-  //module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
-  require_once 'sites/all/libraries/tuque/HttpConnection.php';
-  $connection = new CurlConnection();
+  module_load_include('inc', 'islandora', 'RestConnection');
+
+  $connection = new RestConnection();
   
-  $offset = 0;
-  $limit = 1000;
   $query = 'select $object  $model from <#ri>
   where (walk($model <fedora-model:hasModel><info:fedora/fedora-system:ContentModel-3.0>
   and $model <fedora-model:hasModel> $object))
@@ -369,11 +367,10 @@ function islandora_content_model_forms_query_content_models() {
   minus $object <mulgara:is><info:fedora/fedora-system:ServiceDefinition-3.0>
   minus $object <mulgara:is><info:fedora/fedora-system:ServiceDeployment-3.0>
   order by $object';
-  $url = variable_get('islandora_repository_url', 'http://localhost:8080/fedora/risearch');
-  $url .= "?type=tuples&flush=TRUE&format=Sparql&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . htmlentities(urlencode($query));
-  $response = $connection->getRequest($url);
-  $content = trim($response['content']);
-  return $content != '' ? $content : NULL;
+
+  $results = $connection->repository->ri->itqlQuery($query);
+
+  return $results;
 }
 
 /**
@@ -383,21 +380,12 @@ function islandora_content_model_forms_query_content_models() {
  */
 function islandora_content_model_forms_parse_query($content) {
   $content_models = array();
-  if ($content) {
-    $doc = new DOMDocument();
-    $doc->loadXML($content);
-    $path = new DOMXPath($doc);
-    $path->registerNamespace('sparql', 'http://www.w3.org/2001/sw/DataAccess/rf1/result');
-    $results = $path->query('//sparql:result');
-    if ($results->length > 0) {
-      $count = $results->length;
-      for ($i = 0; $i < $count; $i++) {
-        $result = $results->item($i);
-        $pid = substr($path->query('sparql:object/@uri', $result)->item(0)->value, 12); // 12 characteres in "info:fedora/"
-        $content_models[$pid] = $pid;
-      }
-    }
+  foreach($content as $model) {
+    $content_models[] = $model['object']['value'];
   }
+  $content_models = array_unique($content_models);
+  $content_models = array_values($content_models);
+
   return $content_models;
 }
 
