@@ -45,7 +45,7 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
  */
 function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_pid, $collection_label) {
   $object = islandora_object_load($collection_pid);
-
+  drupal_set_title(t('Ingest'));
   $potential_models = islandora_content_model_forms_get_potential_content_models($object, $form_state);
   unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
   unset($potential_models['islandora:collectionCModel']);
@@ -141,6 +141,7 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
  * @param $collection_label
  */
 function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_pid, $collection_label) {
+  drupal_set_title(t('Ingest form'));
   $content_model_pid = $form_state['values']['models'];
   $content_model_dsid = $content_model_pid; //@TODO: check what this should be
 

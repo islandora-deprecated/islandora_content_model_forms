@@ -89,6 +89,17 @@ function islandora_content_model_forms_menu() {
 }
 
 /**
+ * Implements hook_admin_paths()
+ * 
+ * @return array
+ */
+function islandora_content_model_forms_admin_paths() {
+  $paths = array();
+  $paths['*/ingest_form*'] = TRUE;
+  return $paths;
+}
+
+/**
  * Implements hook_permission. Register permissions().
  *
  * @return array
