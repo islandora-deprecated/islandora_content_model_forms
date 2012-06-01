@@ -17,7 +17,7 @@
 function islandora_content_model_forms_get_ingest_form($form, &$form_state, $collection_pid) {
   module_load_include('module', 'islandora', 'islandora');
   $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
-  $collection_object = islandora_get_object($collection_pid);
+  $collection_object = islandora_object_load($collection_pid);
   $collection_label = $collection_object->label;
 
   if ($page == 1) {
@@ -44,7 +44,9 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
  * @param $collection_label
  */
 function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_pid, $collection_label) {
-  $potential_models = islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state);
+  $object = islandora_object_load($collection_pid);
+
+  $potential_models = islandora_content_model_forms_get_potential_content_models($object, $form_state);
   unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
   unset($potential_models['islandora:collectionCModel']);
   
@@ -258,7 +260,6 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
 
   module_load_include('inc', 'xml_form_api', 'XMLForm');
   module_load_include('inc', 'islandora', 'includes/islandora.ingest');
-  module_load_include('inc', 'islandora', 'RestConnection');
   global $base_url, $user;
   
   if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['type']['file_upload'] == 'text/xml') {
@@ -292,8 +293,7 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   $relationship = NULL;
   $pid = NULL;
 
-  $rest_connection = new RestConnection($user);
-  $fedora_object = new FedoraObject($collection_pid, $rest_connection->repository);
+  $fedora_object = islandora_object_load($collection_pid);
   $collection_policy_info = islandora_ingest_get_information($fedora_object);
 
   $relationship = $collection_policy_info['relationship'];
@@ -379,25 +379,25 @@ function islandora_content_model_forms_update_form_choice($form, $form_state) {
  * @param $collection_pid
  * @param $form_state
  */
-function islandora_content_model_forms_get_potential_content_models($collection_pid, $form_state = array()) {
-  module_load_include('inc', 'islandora', 'RestConnection');
+function islandora_content_model_forms_get_potential_content_models($collection_object, $form_state = array()) {
   module_load_include('inc', 'islandora', 'includes/islandora.ingest');
-  global $user;
-  
-  $rest_connection = new RestConnection($user);
-  $fedora_object = new FedoraObject($collection_pid, $rest_connection->repository);
-  $info = islandora_ingest_get_information($fedora_object);
+  $info = islandora_ingest_get_information($collection_object);
 
   $potential_models = array();
-  foreach ($info['models'] AS $model) {
-    $potential_models[$model['pid']] = $model['name'];
+  if(isset($info['models']) && is_array($info['models'])) {
+    foreach ($info['models'] AS $model) {
+      $potential_models[$model['pid']] = $model['name'];
+    }
   }
 
   if (isset($form_state['storage']['content_model']) && $content_models = $form_state['storage']['content_model']) {
     $content_models = (array) $content_models;
     foreach ($content_models as $content_model_pid) {
-      $content_model = new FedoraObject($content_model_pid, $rest_connection->repository);
-      $potential_models["$content_model_pid"] = $content_model->label;
+      try {
+        $content_model = $collection_object->repository->getObject($content_model_pid);
+        $potential_models["$content_model_pid"] = $content_model->label;
+      }
+      catch (RepositoryException $e) {}
     }
   }
 
@@ -462,10 +462,10 @@ function islandora_content_model_forms_ingest_files($ingest_file_locations, $obj
  * @param $file
  */
 function _islandora_content_model_forms_get_file_attributes($file) {
-  module_load_include('inc', 'islandora', 'includes/MimeClass');
+  module_load_include('inc', 'islandora', 'includes/mime.detect');
   global $base_url;
 
-  $mime = new MimeClass();
+  $mime = new MimeDetect();
   $mime_type = $mime->getMimetype($file);
   $parts = explode('/', $file);
   foreach ($parts as $n => $part) {

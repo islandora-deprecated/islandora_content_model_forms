@@ -120,12 +120,12 @@ function islandora_content_model_forms_theme() {
 /**
  * Implements hook_islandora_ingest_registry
  * 
- * @param string $collection_pid
+ * @param FedoraObject $collection_pid
  */
 
-function islandora_content_model_forms_islandora_ingest_registry($collection_pid) {
+function islandora_content_model_forms_islandora_ingest_registry($collection_object) {
   module_load_include('inc', 'islandora_content_model_forms', 'includes/ingest.form');
-  $potential_models = islandora_content_model_forms_get_potential_content_models($collection_pid);
+  $potential_models = islandora_content_model_forms_get_potential_content_models($collection_object);
   
   $form_names = array();
   if (is_array($potential_models)) {
@@ -138,7 +138,7 @@ function islandora_content_model_forms_islandora_ingest_registry($collection_pid
     return array(
       array(
         'Name' => t('Islandora Content Model Forms'),
-        'url' => 'islandora/ingest_form/' . $collection_pid, 
+        'url' => 'islandora/ingest_form/' . $collection_object->id,
         'weight' => 5,
       ),
     );
@@ -354,9 +354,9 @@ function islandora_content_model_forms_get_content_model_names() {
  * @return string
  */
 function islandora_content_model_forms_query_content_models() {
-  module_load_include('inc', 'islandora', 'RestConnection');
+  module_load_include('inc', 'islandora', 'includes/tuque');
 
-  $connection = new RestConnection();
+  $connection = new IslandoraTuque();
   
   $query = 'select $object  $model from <#ri>
   where (walk($model <fedora-model:hasModel><info:fedora/fedora-system:ContentModel-3.0>
