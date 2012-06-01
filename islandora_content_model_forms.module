@@ -22,8 +22,8 @@ define("PERM_ADMIN_FORM_ASSOCIATION", 'Administer Form Associations');
 function islandora_content_model_forms_menu() {
   // List existing associations, include a form for adding more.
   $items['admin/islandora/model/forms'] = array(
-    'title' => 'Form Associations',
-    'description' => 'Lists Content Models and the forms they are association with.',
+    'title' => 'Form associations',
+    'description' => 'Associate metadata ingest forms with Islandora content models.',
     'page callback' => 'islandora_content_model_forms_list',
     'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'type' => MENU_NORMAL_ITEM,
