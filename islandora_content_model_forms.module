@@ -440,9 +440,9 @@ function islandora_content_model_forms_islandora_content_model_forms_get_transfo
 function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $output = array();
-  foreach ($content_models as $key => $value) {
+  foreach ($content_models as $value) {
     if (preg_match("/{$string}/i", $value) !== 0) { //@TODO: removed match from start, test?
-      $output[$key] = $value;
+      $output[$value] = $value;
     }
   }
   $output[$string] = $string;
