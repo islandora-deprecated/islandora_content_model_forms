@@ -1,7 +1,5 @@
 <?php
 
-
-
 /*
  * @file
  *
@@ -87,11 +85,18 @@ class EditObjectMetadataForm {
    * @return array
    */
   public function createPageTwo($pid, $client, array &$form_state) {
+    module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+    $item = new Fedora_Item($pid);
     $content_model = ContentModel::loadFromObject($pid);
     $content_model_pid = $content_model->pid;
     $form_name = $form_state['values']['forms'];
+
     $dsid = islandora_content_model_get_dsid($content_model->pid, $form_name);
-    $xml = $this->getMetadata($pid, $dsid, $client);
+    $xml = NULL;
+    if (array_key_exists($dsid, $item->datastreams)) {
+      $xml = $this->getMetadata($pid, $dsid, $client);
+    }
+
     $form = xml_form_builder_get_form($form_state, $form_name, $xml);
     $form['forms'] = array(
       '#type' => 'hidden',
@@ -295,6 +300,11 @@ class EditObjectMetadataForm {
    */
   private function modifyInlineDatastream(DOMDocument $dom, $pid, $dsid, $label, $mime_type) {
     $fedora_item = new Fedora_Item($pid);
+    if (!array_key_exists($dsid, $fedora_item->datastreams)) {
+      $xml = $dom->saveXML();
+      $fedora_item->add_datastream_from_string($dom->saveXML(), $dsid, $label, $mime_type, 'X');
+      return;
+    }
     if ($fedora_item->modify_datastream_by_value($dom->saveXML(), $dsid, $label, $mime_type) !== NULL) {
       drupal_set_message(t('Successfully updated %dsid datastream for object %pid', array('%pid' => $pid, '%dsid' => $dsid)));
     }
@@ -316,6 +326,7 @@ class EditObjectMetadataForm {
    *   Data stream mime_type.
    */
   private function modifyDatastream($dom, $pid, $dsid, $label, $mime_type) {
+
     if ($this->isDatastreamManaged($pid, $dsid)) {
       $this->modifyManagedDatastream($dom, $pid, $dsid, $label, $mime_type);
     }
