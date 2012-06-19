@@ -253,7 +253,12 @@ class EditObjectMetadataForm {
   private function isDatastreamManaged($pid, $dsid) {
     $fedora_item = new Fedora_Item($pid);
     $datastream = $fedora_item->get_datastream($dsid);
-    return $datastream->controlGroup == 'M';
+    if($datastream) {
+      return $datastream->controlGroup == 'M';
+    }
+    else {
+      return FALSE;
+    }
   }
 
   /**
