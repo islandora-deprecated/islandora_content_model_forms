@@ -13,6 +13,7 @@
  * @param $ds_id
  */
 function islandora_content_model_forms_get_edit_form($form, &$form_state, $pid, $ds_id = NULL) {
+
   $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
   if ($page == 1) {
     $form_state['storage']['xml'] = TRUE;
@@ -42,7 +43,7 @@ function islandora_content_model_forms_get_edit_form($form, &$form_state, $pid, 
  */
 function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
 
-  $fedora_object =islandora_object_load($pid);
+  $fedora_object = islandora_object_load($pid);
   $content_models = $fedora_object->models; //First??
   if (empty($ds_id)) {
     $ds_id = NULL;
@@ -175,3 +176,4 @@ function islandora_content_model_forms_edit_form_submit($form, &$form_state) {
   $form_state['storage'] = NULL;
   $form_state['redirect'] = 'islandora/object/' . $pid;
 }
+
