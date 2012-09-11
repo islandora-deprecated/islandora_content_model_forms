@@ -4,6 +4,7 @@
  * @file
  *
  */
+
 /**
  * Modules
  */
@@ -15,7 +16,7 @@ module_load_include('inc', 'php_lib', 'Array');
 define("PERM_ADMIN_FORM_ASSOCIATION", 'Administer Form Associations');
 
 /**
- * Implementation of Hook Menu.
+ * Implements hook_menu().
  *
  * @return array
  */
@@ -66,7 +67,7 @@ function islandora_content_model_forms_menu() {
     'file' => 'includes/ingest-form.inc',
     'type' => MENU_CALLBACK,
   );
-  
+
   // Ingest form implementation callback
   $items['islandora/ingest_form/%'] = array(
     'page callback' => 'drupal_get_form',
@@ -75,7 +76,7 @@ function islandora_content_model_forms_menu() {
     'file' => 'includes/ingest.form.inc',
     'type' => MENU_CALLBACK,
   );
-  
+
   // Edit form implementation callback
   $items['islandora/edit_form/%'] = array(
     'page callback' => 'drupal_get_form',
@@ -89,8 +90,8 @@ function islandora_content_model_forms_menu() {
 }
 
 /**
- * Implements hook_admin_paths()
- * 
+ * Implements hook_admin_paths().
+ *
  * @return array
  */
 function islandora_content_model_forms_admin_paths() {
@@ -100,7 +101,7 @@ function islandora_content_model_forms_admin_paths() {
 }
 
 /**
- * Implements hook_permission. Register permissions().
+ * Implements hook_permission(). Register permissions().
  *
  * @return array
  */
@@ -114,37 +115,37 @@ function islandora_content_model_forms_permission() {
 }
 
 /**
- * Implements hook_theme
+ * Implements hook_theme().
  *
  * @return array
  */
 function islandora_content_model_forms_theme() {
   return array(
-    'list' => array(
+    'islandora_content_model_forms_list' => array(
       'variables' => array('list' => NULL, 'form' => NULL),
-      'template' => 'list',
+      'template' => 'islandora-content-model-forms-list',
       'path' => drupal_get_path('module', 'islandora_content_model_forms') . '/templates',
     ),
   );
 }
 
 /**
- * Implements hook_islandora_ingest_registry
- * 
+ * Implements hook_islandora_ingest_registry().
+ *
  * @param FedoraObject $collection_pid
  */
 
 function islandora_content_model_forms_islandora_ingest_registry($collection_object) {
   module_load_include('inc', 'islandora_content_model_forms', 'includes/ingest.form');
   $potential_models = islandora_content_model_forms_get_potential_content_models($collection_object);
-  
+
   $form_names = array();
   if (is_array($potential_models)) {
     foreach ($potential_models AS $pid => $identifier) {
       $form_names += islandora_content_model_get_form_names($pid);
     }
   }
-  
+
   if (count($form_names) > 0) {
     return array(
       array(
@@ -157,8 +158,8 @@ function islandora_content_model_forms_islandora_ingest_registry($collection_obj
 }
 
 /**
- * Implements hook_islandora_edit_datastream_registry
- * 
+ * Implements hook_islandora_edit_datastream_registry().
+ *
  * @param string $collection_pid
  */
 function islandora_content_model_forms_islandora_edit_datastream_registry($object, $ds_id) {
@@ -171,12 +172,12 @@ function islandora_content_model_forms_islandora_edit_datastream_registry($objec
       $form_names += islandora_content_model_get_form_names($pid, $ds_id);
     }
   }
-  
+
   if (count($form_names) > 0) {
     return array(
       array(
         'Name' => t('Islandora Content Model Forms'),
-        'url' => 'islandora/edit_form/' . $object->id . '/' . $ds_id, 
+        'url' => 'islandora/edit_form/' . $object->id . '/' . $ds_id,
         'weight' => 5,
       ),
     );
@@ -194,11 +195,11 @@ function islandora_content_model_forms_list() {
   foreach ($result AS $data) {
     $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, islandora_content_model_forms_get_transform_name($data->transform), $data->template != '');
   }
-  return theme('list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
+  return theme('islandora_content_model_forms_list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
 }
 
 /**
- * @todo Please document this function.
+ * @TODO Please document this function.
  * @see http://drupal.org/node/1354
  */
 function islandora_content_model_forms_get_transform_name($path) {
@@ -312,7 +313,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
 
 /**
  * Form list form validation.
- * 
+ *
  * @param array $form
  * @param array $form_state
  */
@@ -368,7 +369,7 @@ function islandora_content_model_forms_query_content_models() {
   module_load_include('inc', 'islandora', 'includes/tuque');
 
   $connection = new IslandoraTuque();
-  
+
   $query = 'select $object  $model from <#ri>
   where (walk($model <fedora-model:hasModel><info:fedora/fedora-system:ContentModel-3.0>
   and $model <fedora-model:hasModel> $object))
@@ -384,7 +385,7 @@ function islandora_content_model_forms_query_content_models() {
 }
 
 /**
- * 
+ *
  * @param string $content
  * @return array
  */
@@ -462,7 +463,7 @@ function islandora_content_model_forms_autocomplete($string) {
 
 /**
  * Get form names, optional condition on datastream ID.
- * 
+ *
  * @param string $content_model
  * @return array
  */
@@ -471,7 +472,7 @@ function islandora_content_model_get_form_names($content_model, $ds = NULL) {
   $list = array();
   $query = db_select('islandora_content_model_forms', 'icmf')
     ->fields('icmf', array('form_name', 'dsid', 'content_model'));
-    
+
   if (!is_null($ds)) {
     $query->condition('dsid', $ds);
   }
@@ -538,7 +539,7 @@ function islandora_content_model_get_dsid($content_model_pid, $form_name) {
  * @return string
  */
 function islandora_content_model_get_title_field($content_model_pid, $form_name) {
-  $result = db_query("SELECT title_field FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name", 
+  $result = db_query("SELECT title_field FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name",
     array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
   if (!empty($result)) {
     return $result[0];
@@ -568,7 +569,7 @@ function islandora_content_model_get_template($content_model_pid, $form_name) {
  * @return string
  */
 function islandora_content_model_get_transform($content_model_pid, $form_name) {
-  $result = db_query("SELECT transform FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name", 
+  $result = db_query("SELECT transform FROM {islandora_content_model_forms} where content_model = :content_model AND form_name = :form_name",
     array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
   foreach ($result AS $data) {
     if (isset($data)) {
