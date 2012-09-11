@@ -121,9 +121,9 @@ function islandora_content_model_forms_permission() {
  */
 function islandora_content_model_forms_theme() {
   return array(
-    'list' => array(
+    'islandora_content_model_forms_list' => array(
       'variables' => array('list' => NULL, 'form' => NULL),
-      'template' => 'list',
+      'template' => 'islandora-content-model-forms-list',
       'path' => drupal_get_path('module', 'islandora_content_model_forms') . '/templates',
     ),
   );
@@ -195,7 +195,7 @@ function islandora_content_model_forms_list() {
   foreach ($result AS $data) {
     $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, islandora_content_model_forms_get_transform_name($data->transform), $data->template != '');
   }
-  return theme('list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
+  return theme('islandora_content_model_forms_list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
 }
 
 /**
