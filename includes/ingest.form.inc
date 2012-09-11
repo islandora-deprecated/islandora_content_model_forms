@@ -8,7 +8,7 @@
  * Multi-step ingest form callback.
  * Step 1: determine desired XML form.
  * Step 2: render XML form.
- * 
+ *
  * @param $form
  * @param $form_state
  * @param $collection_pid
@@ -38,7 +38,7 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
 
 /**
  * Ingest form step 1.
- * 
+ *
  * @param $form_state
  * @param $collection_pid
  * @param $collection_label
@@ -49,7 +49,7 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
   $potential_models = islandora_content_model_forms_get_potential_content_models($object, $form_state);
   unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
   unset($potential_models['islandora:collectionCModel']);
-  
+
   list($identifier, $name) = array_peek($potential_models);
   $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
   $content_model_pid = $selected_model;
@@ -88,7 +88,7 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
     '#title' => t('Content models available'),
     '#options' => $potential_models,
     '#default_value' => $selected_model,
-    '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a> '),
+    '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a>'),
     '#ajax' => array(
       'callback' => 'islandora_content_model_forms_update_form_choice',
       'wrapper' => 'content-form-choice',
@@ -135,7 +135,7 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
 
 /**
  * Ingest form step 2.
- * 
+ *
  * @param $form_state
  * @param $collection_pid
  * @param $collection_label
@@ -199,7 +199,7 @@ function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_p
 
 /**
  * Ingest form validation.
- * 
+ *
  * @param $form
  * @param $form_state
  */
@@ -208,7 +208,7 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
   if (!$form_state['submitted']) {
     return;
   }
-  
+
   // Check for submission was here. Seems to be not needed now?
   switch ($form_state['storage']['step']) {
     case 1:
@@ -223,7 +223,7 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
         $xml_form = new XMLForm($form_state);
         $xml_form->validate($form, $form_state);
       }
-      
+
       // Handle uploaded files.
       $arr = array();
       /*
@@ -249,7 +249,7 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
 
 /**
  * Ingest form submit.
- * 
+ *
  * @param $form
  * @param $form_state
  */
@@ -262,7 +262,7 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   module_load_include('inc', 'xml_form_api', 'XMLForm');
   module_load_include('inc', 'islandora', 'includes/islandora.ingest');
   global $base_url, $user;
-  
+
   if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['type']['file_upload'] == 'text/xml') {
     $tmp_dir = file_directory_path();
     if (!$file = file_save_upload('file_upload', array('file_validate_extensions' => array()), $tmp_dir)) {
@@ -300,13 +300,13 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   $relationship = $collection_policy_info['relationship'];
 
   $content_models = array(array('pid' => $content_model_pid));
-  
+
   $object = islandora_ingest_get_object($content_models, $collection_pid, $collection_policy_info['relationship'], 'islandora');
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
   $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
   eval('$label = $form_state[\'values\']' . $label_field . ';');
 
-  $object->label = substr($label, 0, 256);
+  $object->label = drupal_substr($label, 0, 256);
   $object->owner = $user->name;
 
   if (!isset($form['#post']['active-toggle'])) {
@@ -366,7 +366,7 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
 
 /**
  * AJAX callback for step 1 form selection.
- * 
+ *
  * @param $form
  * @param $form_state
  */
@@ -376,7 +376,7 @@ function islandora_content_model_forms_update_form_choice($form, $form_state) {
 
 /**
  * Get content models associated with a collection.
- * 
+ *
  * @param $collection_pid
  * @param $form_state
  */
@@ -385,7 +385,7 @@ function islandora_content_model_forms_get_potential_content_models($collection_
   $info = islandora_ingest_get_information($collection_object);
 
   $potential_models = array();
-  if(isset($info['models']) && is_array($info['models'])) {
+  if (isset($info['models']) && is_array($info['models'])) {
     foreach ($info['models'] AS $model) {
       $potential_models[$model['pid']] = $model['name'];
     }
@@ -398,7 +398,9 @@ function islandora_content_model_forms_get_potential_content_models($collection_
         $content_model = $collection_object->repository->getObject($content_model_pid);
         $potential_models["$content_model_pid"] = $content_model->label;
       }
-      catch (RepositoryException $e) {}
+      catch (RepositoryException $e) {
+
+      }
     }
   }
 
@@ -407,7 +409,7 @@ function islandora_content_model_forms_get_potential_content_models($collection_
 
 /**
  * Transform form generated XML.
- * 
+ *
  * @param $transform
  * @param $source_document
  * @param $object
@@ -437,7 +439,7 @@ function islandora_content_model_forms_transform_document($transform, $source_do
 
 /**
  * Add a managed datastream to an object based on an uploaded file.
- * 
+ *
  * @param $ingest_file_locations
  * @param $object
  */
@@ -459,7 +461,7 @@ function islandora_content_model_forms_ingest_files($ingest_file_locations, $obj
 
 /**
  * Determine a title and mimetype for a file.
- * 
+ *
  * @param $file
  */
 function _islandora_content_model_forms_get_file_attributes($file) {
@@ -475,7 +477,7 @@ function _islandora_content_model_forms_get_file_attributes($file) {
   $path = implode('/', $parts);
   $file_url = $base_url . '/' . $path;
   $begin_index = strrpos($file_url, '/');
-  $dtitle = substr($file_url, $begin_index + 1);
+  $dtitle = drupal_substr($file_url, $begin_index + 1);
   $dtitle = urldecode($dtitle);
   return array($dtitle, $mime_type);
 }

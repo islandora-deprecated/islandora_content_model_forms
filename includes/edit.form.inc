@@ -6,7 +6,7 @@
 
 /**
  * Edit form callback.
- * 
+ *
  * @param $form
  * @param $form_state
  * @param $pid
@@ -18,23 +18,23 @@ function islandora_content_model_forms_get_edit_form($form, &$form_state, $pid, 
     $form_state['storage']['xml'] = TRUE;
     $form = islandora_content_model_forms_edit_page_1($pid, $ds_id, $form_state);
   }
-  
+
   // If the form is set while fetching step 1, proceed to step 2 (case: one form).
   if (isset($form_state['values']['forms'])) {
     $page = 2;
     $form_state['storage']['step'] = 2;
   }
-  
+
   if ($page == 2 && $form_state['storage']['xml']) {
     $form = islandora_content_model_forms_edit_page_2($pid, $form_state);
   }
-    
+
   return $form;
 }
 
 /**
  * Datastream edit form step 1.
- * 
+ *
  * @param $pid
  * @param $ds_id
  * @param $form_state
@@ -51,14 +51,14 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
   foreach ($content_models AS $model) {
     $form_names += islandora_content_model_get_form_names($model, $ds_id);
   }
-  
+
   if (empty($form_names)) {
     drupal_set_message(t('No forms are associated. Please associate a form and try again.'), 'warning');
     drupal_goto("islandora/object/$pid");
   }
-  
+
   $form = array();
- 
+
   if (count($form_names) > 1) {
     $form['indicator'] = array(
       '#type' => 'fieldset',
@@ -79,13 +79,13 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
   else {
     $form_state['values']['forms'] = key($form_names);
   }
-  
+
   return $form;
 }
 
 /**
  * Datastream edit form step 2.
- * 
+ *
  * @param $pid
  * @param $form_state
  */
@@ -95,9 +95,9 @@ function islandora_content_model_forms_edit_page_2($pid, &$form_state) {
   list($dsid, $content_model) = islandora_content_model_forms_get_ids_for_form($form_name);
 
   $fedora_object = islandora_object_load($pid);
-  
+
   $xml = $fedora_object[$dsid];
-  
+
   $form = xml_form_builder_get_form($form_state, $form_name, $xml->content);
 
   $form['content_model_pid'] = array(
@@ -116,16 +116,16 @@ function islandora_content_model_forms_edit_page_2($pid, &$form_state) {
     '#type' => 'hidden',
     '#value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : $dsid,
   );
-  
+
   $form['#submit'] = array('islandora_content_model_forms_edit_form_submit');
   $form['#validate'] = array('islandora_content_model_forms_get_edit_form_validate');
-  
+
   return $form;
 }
 
 /**
  * Edit form validation.
- * 
+ *
  * @param $form
  * @param $form_state
  */
@@ -140,7 +140,7 @@ function islandora_content_model_forms_get_edit_form_validate($form, &$form_stat
 
 /**
  * Edit form submit.
- * 
+ *
  * @param $form
  * @param $form_state
  * @throws Exception
@@ -149,29 +149,29 @@ function islandora_content_model_forms_edit_form_submit($form, &$form_state) {
   module_load_include('inc', 'xml_form_api', 'XMLForm');
   module_load_include('inc', 'islandora_content_model_forms', 'includes/ingest.form');
   global $base_url, $user;
-  
+
   $pid = $form_state['values']['pid'];
   $dsid = $form_state['values']['dsid'];
   $form_name = $form_state['values']['forms'];
   $content_model_pid = $form_state['values']['content_model_pid'];
   $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
   eval('$label = $form_state[\'values\']' . $label_field . ';');
-  
+
   $xml_form = new XMLForm($form_state);
   $doc = $xml_form->submit($form, $form_state);
   $document = $doc->document;
-  
+
   $object = islandora_object_load($pid);
   $object->label = $label;
-  
+
   $xml_ds = $object[$dsid];
   $xml_ds->setContentFromString($document->saveXML());
-  
+
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
   $dc_doc = islandora_content_model_forms_transform_document($transform, $document, $object);
   $dc_ds = $object['DC'];
   $dc_ds->setContentFromString($dc_doc->saveXML());
-  
+
   $form_state['storage'] = NULL;
   $form_state['redirect'] = 'islandora/object/' . $pid;
 }

@@ -1,4 +1,10 @@
-<?php ?>
+<?php
+/**
+ * @file
+ *
+ * @TODO: needs documentation + list of all available variables
+ */
+?>
 <div id="content-model-form-main">
   <div id="content-model-form-table">
     <table>
@@ -20,7 +26,7 @@
           <td><?php print $form_name ?></td>
           <td><?php print $transform ?></td>
           <td><?php print ($has_template) ? 'True' : 'False' ?></td>
-          <td><?php print l("Delete", "admin/islandora/model/forms/remove/$id") ?></td>
+          <td><?php print l(t("Delete"), "admin/islandora/model/forms/remove/$id") ?></td>
         </tr>
       <?php endforeach; ?>
       </table>
