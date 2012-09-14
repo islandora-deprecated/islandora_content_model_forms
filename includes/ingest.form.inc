@@ -332,19 +332,6 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
 
   if (!empty($relationship) && !empty($object->id)) {
 
-    // added ne functionality to static thumbnails to objects if values are provided in forms
-    $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
-    $image_dir = isset($form_state['values']['image_directory']) ? $form_state['values']['image_directory'] : NULL;
-    $thumbnail_file = isset($form_state['values']['thumbnail_file']) ? $form_state['values']['thumbnail_file'] : NULL;
-
-    if ($module && $thumbnail_file) {
-      $stored_thumbnail = drupal_get_path('module', $module) . "/$image_dir/$thumbnail_file";
-      $stored_thumbnail = preg_replace('/\/\//', '/', $stored_thumbnail);
-      file_copy($stored_thumbnail, file_directory_path());
-      $thumbnail = file_directory_path() . '/' . $thumbnail_file;
-      $_SESSION['fedora_ingest_files']['TN'] = $thumbnail;
-    }
-
     $uploaded_file = isset($form_state['values']['ingest-file-location']) && trim($form_state['values']['ingest-file-location']) !== '';
     $ingest_file_location = $uploaded_file ? $form_state['values']['ingest-file-location'] : NULL;
     if (isset($ingest_file_location)) {
