@@ -165,6 +165,9 @@ class EditObjectMetadataForm {
     $content_model_pid = $form_state['values']['content_model_pid'];
     $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
     eval('$label = $form_state[\'values\']' . $label_field . ';');
+    if(empty($label)) {
+      $label = "Undefined";
+    }
     $this->setObjectLabel($pid, $label);
     $document = $this->modifyMetadata($pid, $dsid, $form, $form_state);
     $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
