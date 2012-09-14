@@ -313,7 +313,9 @@ class IngestObjectMetadataForm {
       $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
       eval('$label = $form_state[\'values\']' . $label_field . ';'); //FIXME:  This doesn't really work in many cases (building the title from multiple fields, as for a person's last and first name fields.  Also:
       //FIXME:  'eval' is terrible... Get rid of it!
-
+      if(empty($label)) {
+        $label = "Undefined";
+      }
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
       }
