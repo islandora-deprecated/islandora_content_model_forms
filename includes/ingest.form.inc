@@ -431,6 +431,13 @@ function islandora_content_model_forms_transform_document($transform, $source_do
  * @param $object
  */
 function islandora_content_model_forms_ingest_files($ingest_file_locations, $object) {
+  $new_files = module_invoke_all("islandora_before_content_model_form_ingest_files", $ingest_file_locations, $object);
+
+  // Modify the ingest locations array if anything was returned by other modules
+  if (!empty($new_files) && count($new_files) > 0) {
+    $ingest_file_locations = $new_files;
+  }
+
   if (empty($ingest_file_locations) || count($ingest_file_locations) === 0) {
     return;
   }
