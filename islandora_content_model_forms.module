@@ -193,11 +193,10 @@ function islandora_content_model_forms_islandora_edit_datastream_registry($objec
  */
 function islandora_content_model_forms_list() {
   $path = drupal_get_path('module', 'islandora_content_model_forms');
-  //drupal_add_css("$path/css/form.css");
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}')->fetchAll();
   foreach ($result AS $data) {
-    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, islandora_content_model_forms_get_transform_name($data->transform), $data->template != '');
+    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, $data->transform, $data->template != '');
   }
   return theme('islandora_content_model_forms_list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
 }
@@ -206,19 +205,14 @@ function islandora_content_model_forms_list() {
  * @TODO Please document this function.
  * @see http://drupal.org/node/1354
  */
-function islandora_content_model_forms_get_transform_name($path) {
-  static $transforms = array();
+function islandora_content_model_forms_get_transform_path($name) {
+  $transforms = module_invoke_all('islandora_content_model_forms_get_transforms');
 
-  if (empty($transforms)) {
-    $transforms = module_invoke_all('islandora_content_model_forms_get_transforms');
-  }
-
-  if (array_key_exists($path, $transforms)) {
-    return $transforms[$path];
+  if (array_key_exists($name, $transforms)) {
+    return $transforms[$name];
   }
   else {
-    drupal_set_message(t('Transform not specified in hook?: %path', array('%path' => $path)), 'error');
-    return $path;
+    return NULL;
   }
 }
 
@@ -245,6 +239,10 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $form_names = islandora_content_model_forms_get_form_names();
   $transforms = islandora_content_model_forms_get_transforms();
+  $transform_select = array();
+  foreach($transforms as $name => $path) {
+    $transform_select[$name] = $name;
+  }
 
   if (count($form_names) == 0) {
     drupal_set_message(t('No forms defined, both forms and content models must be defined to add new associations.'), 'error');
@@ -298,7 +296,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
       'transform' => array(
         '#type' => 'select',
         '#title' => t('XSL Transform'),
-        '#options' => $transforms,
+        '#options' => $transform_select,
         '#description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
       ),
       'file' => array(
@@ -438,8 +436,7 @@ function islandora_content_model_forms_islandora_content_model_forms_get_transfo
   if ($dir !== FALSE) {
     while (($file = readdir($dir)) !== FALSE) {
       if (preg_match('/\.xslt?$/', $file)) {
-        $transforms["$include_path/$file"] = $file . " (islandora_content_model_forms)";
-        $transforms[$file] = $file . " (islandora_content_model_forms; legacy location)";
+        $transforms["$file (Islandora)"] = "$include_path/$file";
       }
     }
   }
@@ -577,29 +574,8 @@ function islandora_content_model_get_transform($content_model_pid, $form_name) {
     array(':content_model' => $content_model_pid, ':form_name' => $form_name))->fetchCol();
   foreach ($result AS $data) {
     if (isset($data)) {
-      $xsl_file = "./{$data}";
-
-      $old_transform_path = drupal_get_path('module', 'islandora_content_model_forms') . "/transforms/{$data}";
-      if (!file_exists($xsl_file)) {
-        $xsl_file = "./$old_transform_path";
-
-        if (file_exists($xsl_file)) {
-          watchdog('islandora_content_model_forms', 'Found the transform "@transform" in the legacy location. Transforms ' .
-            'should be specified by a path relative to the server\'s document root.', array(
-            '@transform' => $data,
-            '@old_dir' => $old_transform_path,
-          ), WATCHDOG_WARNING);
-        }
-        else {
-          watchdog('islandora_content_model_forms', 'The XSLT transform to DC cannot be located as either "@transform"' .
-            ' or "@old_dir"!.', array(
-            '@transform' => $data,
-            '@old_dir' => $old_transform_path,
-          ), WATCHDOG_ERROR);
-          return NULL;
-        }
-      }
-      return $xsl_file;
+      $path = islandora_content_model_forms_get_transform_path($data);
+      return $path;
     }
   }
   return NULL;
