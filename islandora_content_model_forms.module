@@ -44,6 +44,15 @@ function islandora_content_model_forms_menu() {
     'type' => MENU_CALLBACK,
   );
   // Remove existing associations, redirect back to list.
+  $items['admin/islandora/model/forms/disable/%/%'] = array(
+    'title' => 'Disable Form Association.',
+    'description' => 'Disable associated form.',
+    'page callback' => 'islandora_content_model_forms_disable',
+    'page arguments' => array(5,6),
+    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
+    'type' => MENU_CALLBACK,
+  );
+  // Remove existing associations, redirect back to list.
   $items['admin/islandora/model/forms/remove/%'] = array(
     'title' => 'Remove Form Association.',
     'description' => 'Removes a associated form.',
@@ -196,8 +205,42 @@ function islandora_content_model_forms_list() {
   $list = array();
   $result = db_query('SELECT * FROM {islandora_content_model_forms}')->fetchAll();
   foreach ($result AS $data) {
-    $list[] = array($data->id, $data->content_model, $data->form_name, $data->dsid, $data->title_field, $data->transform, $data->template != '');
+    $list[] = array(
+      'type' => 'custom',
+      'id' => $data->id,
+      'content_model' => $data->content_model,
+      'form_name' => $data->form_name,
+      'dsid' => $data->dsid,
+      'title_field' => $data->title_field,
+      'transform' => $data->transform, 
+      'template' => $data->template != '',
+    );
   }
+
+  $hook_forms = module_invoke_all('islandora_content_model_forms_form_associations');
+
+  $disabled_associations = db_select('islandora_content_model_forms_association_hooks', 'cm')
+    ->condition('enabled', '0')
+    ->fields('cm')
+    ->execute();
+
+  foreach($disabled_associations as $disabled) {
+    if(isset($hook_forms[$disabled->id])) {
+      $hook_forms[$disabled->id]['disabled'] = TRUE;
+    }
+  }
+
+  foreach($hook_forms as $key => $hook_form){
+    $hook_form['id'] = $key;
+    $hook_form['type'] = 'hook';
+    // tranform a potential string to boolean
+    $hook_form['template'] = ($hook_form['template'] != '');
+    if(!isset($hook_form['disabled'])) {
+      $hook_form['disabled'] = FALSE;
+    }
+    array_unshift($list, $hook_form);
+  }
+
   return theme('islandora_content_model_forms_list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
 }
 
@@ -226,6 +269,48 @@ function islandora_content_model_forms_remove($id) {
   ->condition('id', (int) $id)
   ->execute();
   drupal_set_message(t('Successfully removed association.'));
+  drupal_goto('admin/islandora/model/forms');
+}
+
+/**
+ * Remove the association identified by $id.
+ *
+ * @param int $id
+ */
+function islandora_content_model_forms_disable($id, $disable) {
+  $hook_forms = module_invoke_all('islandora_content_model_forms_form_associations');
+  if(!isset($hook_forms[$id])) {
+    drupal_set_message(t('Specified association does not exist.'), 'error');
+    drupal_goto('admin/islandora/model/forms');
+    return '';
+  }
+
+  $data = db_select('islandora_content_model_forms_association_hooks', 'cm')
+      ->condition('id', $id)
+      ->fields('cm')
+      ->execute();
+
+  if($data->rowCount() == 1) {
+    db_update('islandora_content_model_forms_association_hooks')
+      ->fields(array('enabled' => ($disable == 'true') ? 0 : 1))
+      ->condition('id', $id)
+      ->execute();
+  }
+  else {
+    db_insert('islandora_content_model_forms_association_hooks')
+      ->fields(array(
+        'id' => $id,
+        'enabled' => ($disable == 'true') ? 0 : 1,
+      ))
+      ->execute();
+  }
+
+  if($disable == 'true') {
+    drupal_set_message(t('Successfully disabled association.'));
+  }
+  else {
+    drupal_set_message(t('Successfully enabled association.'));
+  }
   drupal_goto('admin/islandora/model/forms');
 }
 
@@ -421,7 +506,9 @@ function islandora_content_model_forms_get_form_names() {
  * @see http://drupal.org/node/1354
  */
 function islandora_content_model_forms_get_transforms() {
-  return module_invoke_all('islandora_content_model_forms_get_transforms');
+  $tranforms = module_invoke_all('islandora_content_model_forms_get_transforms');
+  $tranforms['No Tranform'] = 'No Tranform';
+  return $tranforms;
 }
 
 /**

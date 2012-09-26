@@ -82,5 +82,23 @@ function islandora_content_model_forms_schema() {
     ),
     'primary key' => array('id'),
   );
+  $schema['islandora_content_model_forms_association_hooks'] = array(
+    'description' => 'This table is used to store the status of associations defined by hooks.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The name of the hook.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not NULL' => TRUE,
+      ),
+      'enabled' => array(
+        'description' => 'If the hook is enabled.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not NULL' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
   return $schema;
 }
