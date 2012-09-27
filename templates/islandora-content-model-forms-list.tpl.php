@@ -30,10 +30,10 @@
           <td><?php print ($association['template']) ? t('Yes') : t('No') ?></td>
           <?php if($association['type'] == 'hook'): ?>
             <td>
-              <?php if($association['disabled']): ?>
-                <?php print l(t("Enable"), "admin/islandora/model/forms/disable/" . $association['id'] . "/false") ?>
-              <?php else: ?>
+              <?php if($association['enabled']): ?>
                 <?php print l(t("Disable"), "admin/islandora/model/forms/disable/" . $association['id'] . "/true") ?>
+              <?php else: ?>
+                <?php print l(t("Enable"), "admin/islandora/model/forms/disable/" . $association['id'] . "/false") ?>
               <?php endif; ?>
             </td>
           <?php else: ?>

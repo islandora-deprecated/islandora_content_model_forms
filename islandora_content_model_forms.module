@@ -217,31 +217,56 @@ function islandora_content_model_forms_list() {
     );
   }
 
-  $hook_forms = module_invoke_all('islandora_content_model_forms_form_associations');
-
-  $disabled_associations = db_select('islandora_content_model_forms_association_hooks', 'cm')
-    ->condition('enabled', '0')
-    ->fields('cm')
-    ->execute();
-
-  foreach($disabled_associations as $disabled) {
-    if(isset($hook_forms[$disabled->id])) {
-      $hook_forms[$disabled->id]['disabled'] = TRUE;
-    }
-  }
+  $hook_forms = islandora_content_model_forms_get_hook_associations();
 
   foreach($hook_forms as $key => $hook_form){
     $hook_form['id'] = $key;
     $hook_form['type'] = 'hook';
     // tranform a potential string to boolean
     $hook_form['template'] = ($hook_form['template'] != '');
-    if(!isset($hook_form['disabled'])) {
-      $hook_form['disabled'] = FALSE;
-    }
     array_unshift($list, $hook_form);
   }
 
   return theme('islandora_content_model_forms_list', array('list' => $list, 'form' => drupal_get_form('islandora_content_model_forms_list_form')));
+}
+
+/**
+ * Returns the associations defined by the hook along with their status from
+ * the database.
+ *
+ * @param boolean $only_return_enabled
+ *   If this value is true then only forms that are enabled are returned.
+ *
+ * @return array
+ */
+function islandora_content_model_forms_get_hook_associations($only_return_enabled = FALSE) {
+  $hook_associations = module_invoke_all('islandora_content_model_forms_form_associations');
+  $return_associations = array();
+
+  $associations = db_select('islandora_content_model_forms_association_hooks', 'cm')
+    ->fields('cm')
+    ->execute();
+
+  foreach($associations as $association) {
+    if(isset($hook_associations[$association->id])) {
+      $hook_associations[$association->id]['enabled'] = ($association->enabled == 1);
+      $hook_associations[$association->id]['in_db'] = TRUE;
+
+      if(($only_return_enabled && $association->enabled == 1) || !$only_return_enabled) {
+        $return_associations[$association->id] = $hook_associations[$association->id];
+      }
+      
+      unset($hook_associations[$association->id]);
+    }
+  }
+
+  foreach($hook_associations as $key => $assocation) {
+    $assocation['enabled'] = TRUE;
+    $assocation['in_db'] = FALSE;
+    $return_associations[$key] = $assocation;
+  }
+
+  return $return_associations;
 }
 
 /**
@@ -278,19 +303,14 @@ function islandora_content_model_forms_remove($id) {
  * @param int $id
  */
 function islandora_content_model_forms_disable($id, $disable) {
-  $hook_forms = module_invoke_all('islandora_content_model_forms_form_associations');
+  $hook_forms = islandora_content_model_forms_get_hook_associations();
   if(!isset($hook_forms[$id])) {
     drupal_set_message(t('Specified association does not exist.'), 'error');
     drupal_goto('admin/islandora/model/forms');
     return '';
   }
 
-  $data = db_select('islandora_content_model_forms_association_hooks', 'cm')
-      ->condition('id', $id)
-      ->fields('cm')
-      ->execute();
-
-  if($data->rowCount() == 1) {
+  if($hook_forms[$id]['in_db']) {
     db_update('islandora_content_model_forms_association_hooks')
       ->fields(array('enabled' => ($disable == 'true') ? 0 : 1))
       ->condition('id', $id)
@@ -382,6 +402,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
         '#type' => 'select',
         '#title' => t('XSL Transform'),
         '#options' => $transform_select,
+        '#default_value' => 'No Transform',
         '#description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
       ),
       'file' => array(
@@ -507,7 +528,7 @@ function islandora_content_model_forms_get_form_names() {
  */
 function islandora_content_model_forms_get_transforms() {
   $tranforms = module_invoke_all('islandora_content_model_forms_get_transforms');
-  $tranforms['No Tranform'] = 'No Tranform';
+  $tranforms['No Transform'] = 'No Transform';
   return $tranforms;
 }
 
@@ -541,7 +562,7 @@ function islandora_content_model_forms_autocomplete($string) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $output = array();
   foreach ($content_models as $value) {
-    if (preg_match("/{$string}/i", $value) !== 0) { //@TODO: removed match from start, test?
+    if (preg_match("/{$string}/i", $value) !== 0) {
       $output[$value] = $value;
     }
   }
@@ -570,6 +591,16 @@ function islandora_content_model_get_form_names($content_model, $ds = NULL) {
       $list[$data->form_name] = "{$data->form_name}: ({$data->dsid})";
     }
   }
+
+  $hook = islandora_content_model_forms_get_hook_associations(TRUE);
+  foreach ($hook as $data) {
+    if ($data['content_model'] == $content_model && XMLFormDatabase::Valid($data['form_name'])) {
+      if($ds == NULL || $ds == $data['dsid']) {
+        $list[$data['form_name']] = "{$data['form_name']}: ({$data['dsid']})";
+      }
+    }
+  }
+
   return $list;
 }
 
@@ -578,6 +609,13 @@ function islandora_content_model_forms_get_ids_for_form($form_name) {
     array(':form_name' => $form_name))->fetchAll();
   foreach ($result AS $data) {
     return array($data->dsid, $data->content_model);
+  }
+
+  $results = islandora_content_model_forms_get_hook_associations(TRUE);
+  foreach ($results as $result) {
+    if($result['form_name'] == $form_name) {
+      return array($result['dsid'], $result['content_model']);
+    }
   }
 }
 
@@ -603,8 +641,25 @@ function islandora_content_model_association_exists($content_model_pid, $form_na
       return TRUE;
     }
   }
+  
+  $results = islandora_content_model_forms_get_hook_associations();
+  foreach($results as $result) {
+    if($result['content_model'] == $content_model_pid && $result['form_name'] == $form_name) {
+      return TRUE;
+    }
+  }
+
   return FALSE;
 }
+
+
+
+/**
+ * @todo STOPPED HERE for the night. The functions below need to be updated.
+ * @todo Change around the ingest form when there is only one CM.
+ * @todo Fix the schema cache stuff.
+ */
+
 
 /**
  *
@@ -617,6 +672,7 @@ function islandora_content_model_get_dsid($content_model_pid, $form_name) {
   if (!empty($result)) {
     return $result[0];
   }
+
   return NULL;
 }
 
