@@ -604,21 +604,6 @@ function islandora_content_model_get_form_names($content_model, $ds = NULL) {
   return $list;
 }
 
-function islandora_content_model_forms_get_ids_for_form($form_name) {
-  $result = db_query("SELECT content_model, dsid FROM {islandora_content_model_forms} WHERE form_name = :form_name",
-    array(':form_name' => $form_name))->fetchAll();
-  foreach ($result AS $data) {
-    return array($data->dsid, $data->content_model);
-  }
-
-  $results = islandora_content_model_forms_get_hook_associations(TRUE);
-  foreach ($results as $result) {
-    if($result['form_name'] == $form_name) {
-      return array($result['dsid'], $result['content_model']);
-    }
-  }
-}
-
 /**
  *
  * @param string $content_model
@@ -655,7 +640,6 @@ function islandora_content_model_association_exists($content_model_pid, $form_na
 
 
 /**
- * @todo STOPPED HERE for the night. The functions below need to be updated.
  * @todo Change around the ingest form when there is only one CM.
  * @todo Fix the schema cache stuff.
  */
@@ -673,6 +657,13 @@ function islandora_content_model_get_dsid($content_model_pid, $form_name) {
     return $result[0];
   }
 
+  $hooks = islandora_content_model_forms_get_hook_associations(TRUE);
+  foreach($hooks as $hook) {
+    if($hook['content_model'] == $content_model_pid && $hook['form_name'] == $form_name) {
+      return $hook['dsid'];
+    }
+  }
+
   return NULL;
 }
 
@@ -688,6 +679,14 @@ function islandora_content_model_get_title_field($content_model_pid, $form_name)
   if (!empty($result)) {
     return $result[0];
   }
+
+  $hooks = islandora_content_model_forms_get_hook_associations(TRUE);
+  foreach($hooks as $hook) {
+    if($hook['content_model'] == $content_model_pid && $hook['form_name'] == $form_name) {
+      return $hook['title_field'];
+    }
+  }
+
   return NULL;
 }
 
@@ -703,6 +702,14 @@ function islandora_content_model_get_template($content_model_pid, $form_name) {
   if (!empty($result) && $result[0] != '') {
     return $result[0];
   }
+
+  $hooks = islandora_content_model_forms_get_hook_associations(TRUE);
+  foreach($hooks as $hook) {
+    if($hook['content_model'] == $content_model_pid && $hook['form_name'] == $form_name) {
+      return $hook['template'];
+    }
+  }
+
   return NULL;
 }
 
@@ -721,6 +728,14 @@ function islandora_content_model_get_transform($content_model_pid, $form_name) {
       return $path;
     }
   }
+
+  $hooks = islandora_content_model_forms_get_hook_associations(TRUE);
+  foreach($hooks as $hook) {
+    if($hook['content_model'] == $content_model_pid && $hook['form_name'] == $form_name) {
+      return islandora_content_model_forms_get_transform_path($hook['transform']);
+    }
+  }
+
   return NULL;
 }
 

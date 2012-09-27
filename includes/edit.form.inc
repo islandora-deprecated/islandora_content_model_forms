@@ -44,23 +44,29 @@ function islandora_content_model_forms_get_edit_form($form, &$form_state, $pid, 
 function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
 
   $fedora_object = islandora_object_load($pid);
-  $content_models = $fedora_object->models; //First??
+  $content_models = $fedora_object->models;
   if (empty($ds_id)) {
     $ds_id = NULL;
   }
   $form_names = array();
+  $form_count = 0;
   foreach ($content_models AS $model) {
-    $form_names += islandora_content_model_get_form_names($model, $ds_id);
+    $forms = islandora_content_model_get_form_names($model, $ds_id);
+    $forms = array_keys($forms);
+    foreach($forms as $form) {
+      $form_names[$model]["$model $form"] = $form;
+      $form_count++;
+    }
   }
 
-  if (empty($form_names)) {
+  if ($form_count == 0) {
     drupal_set_message(t('No forms are associated. Please associate a form and try again.'), 'warning');
     drupal_goto("islandora/object/$pid");
   }
 
   $form = array();
 
-  if (count($form_names) > 1) {
+  if ($form_count > 1) {
     $form['indicator'] = array(
       '#type' => 'fieldset',
       '#title' => t('Choose edit form.'),
@@ -76,9 +82,15 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
       '#validate' => array('islandora_content_model_forms_get_edit_form_validate'),
       '#value' => t('Next'),
     );
+    $form['dsid'] = array(
+      '#type' => 'hidden',
+      '#value' => $ds_id,
+    );
   }
   else {
-    $form_state['values']['forms'] = key($form_names);
+    $model = key($form_names);
+    $form_state['values']['forms'] = key($form_names[$model]);
+    $form_state['values']['dsid'] = $ds_id;
   }
 
   return $form;
@@ -92,8 +104,8 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
  */
 function islandora_content_model_forms_edit_page_2($pid, &$form_state) {
 
-  $form_name = $form_state['values']['forms'];
-  list($dsid, $content_model) = islandora_content_model_forms_get_ids_for_form($form_name);
+  list($content_model, $form_name) = explode(' ', $form_state['values']['forms'], 2);
+  $dsid = $form_state['values']['dsid'];
 
   $fedora_object = islandora_object_load($pid);
 
