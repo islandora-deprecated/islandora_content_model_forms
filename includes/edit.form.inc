@@ -52,9 +52,16 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
   $form_count = 0;
   foreach ($content_models AS $model) {
     $forms = islandora_content_model_get_form_names($model, $ds_id);
+    $cm_object = islandora_object_load($model);
+    if($cm_object) {
+      $cm_name = $cm_object->label;
+    }
+    else {
+      $cm_name = $model;
+    }
     $forms = array_keys($forms);
     foreach($forms as $form) {
-      $form_names[$model]["$model $form"] = $form;
+      $form_names[$cm_name]["$model $form"] = $form;
       $form_count++;
     }
   }
@@ -73,7 +80,7 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
     );
     $form['indicator']['forms'] = array(
       '#type' => 'select',
-      '#title' => t('Forms'),
+      '#title' => t('Metadata Forms Available'),
       '#options' => $form_names,
       '#description' => t('Select the form to edit.'),
     );

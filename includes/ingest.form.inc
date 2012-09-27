@@ -25,12 +25,15 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
     $form_state['storage']['collection_pid'] = $collection_pid;
     $form = islandora_content_model_forms_ingest_page_1($form_state, $collection_pid, $collection_object->label);
   }
-  elseif ($form_state['storage']['xml']) {
-    $form_state['storage']['content_model'] = $form_state['values']['models'];
-    $form = islandora_content_model_forms_ingest_page_2($form_state, $collection_pid, $collection_object->label);
+
+  // If the form is set while fetching step 1, proceed to step 2 (case: one form).
+  if (isset($form_state['values']['forms'])) {
+    $page = 2;
+    $form_state['storage']['step'] = 2;
   }
-  else {
-    throw new Exception("Couldn't Create the Ingest Form.");
+
+  if ($page == 2) {
+    $form = islandora_content_model_forms_ingest_page_2($form_state, $collection_pid, $collection_object->label);
   }
 
   return $form;
@@ -46,82 +49,59 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
 function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_pid, $collection_label) {
   $object = islandora_object_load($collection_pid);
   drupal_set_title(t('Ingest'));
-  $potential_models = islandora_content_model_forms_get_potential_content_models($object, $form_state);
-  unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
-  unset($potential_models['islandora:collectionCModel']);
 
-  list($identifier, $name) = array_peek($potential_models);
-  $selected_model = isset($form_state['values']['models']) ? $form_state['values']['models'] : $identifier;
-  $content_model_pid = $selected_model;
+  $content_models = islandora_content_model_forms_get_potential_content_models($object);
+  $form_names = array();
+  $form_count = 0;
+  foreach ($content_models AS $model => $name) {
+    $forms = islandora_content_model_get_form_names($model);
+    foreach($forms as $form_name => $friendly_name) {
+      $form_names[$name]["$model $form_name"] = $friendly_name;
+      $form_count++;
+    }
+  }
 
-  $form_names = islandora_content_model_get_form_names($content_model_pid);
+  if (count($content_models) == 0) {
+    drupal_set_message(t('No content models are associated with this collection. Please add a content model and try again.'), 'warning');
+    drupal_goto("islandora/object/$collection_pid");
+  }
+
+  if ($form_count == 0) {
+    drupal_set_message(t('No forms are associated. Please associate a form and try again.'), 'warning');
+    drupal_goto("islandora/object/$collection_pid");
+  }
 
   $form = array();
-  if (count($potential_models) == 0) {
-    if (!user_access('manage collections')) {
-      $message = t('This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.');
-    }
-    else {
-      $message = t('This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.');
-      $form['message'] = array(
-        '#type' => 'item',
-        '#value' => $message,
-      );
-      return $form;
-    }
-  }
 
-  $form['indicator'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Ingest digital object into %collection_label (@collection_pid), Step #1:', array('@collection_pid' => $collection_pid, '%collection_label' => $collection_label)),
-  );
-
-  $form['indicator']['models'] = array(
-    '#type' => 'select',
-    '#title' => t('Content models available'),
-    '#options' => $potential_models,
-    '#default_value' => $selected_model,
-    '#description' => t('Content models define datastream composition, relationships between this and other content models, and the mandatory behaviors associated with each digital object.<br /> Additional information may be found <a href="https://wiki.duraspace.org/display/FEDORACREATE/Content+Models+Overview">here.</a>'),
-    '#ajax' => array(
-      'callback' => 'islandora_content_model_forms_update_form_choice',
-      'wrapper' => 'content-form-choice',
-      'effect' => 'fade',
-      'method' => 'replace',
-    ),
-  );
-
-  $form['indicator']['content_form_ahah_wrapper'] = array(
-    '#prefix' => '<div id="content-form-choice">',
-    '#suffix' => '</div>',
-    '#type' => 'item',
-  );
-
-  if (count($form_names) == 1) {
-    $keys = array_keys($form_names);
-    $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
-      '#type' => 'hidden',
-      '#value' => array_shift($keys),
+  if($form_count > 1) {
+    $form['indicator'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Ingest digital object into %collection_label (@collection_pid), Step #1:', array('@collection_pid' => $collection_pid, '%collection_label' => $collection_label)),
     );
-  }
-  elseif (count($form_names) > 0) {
-    $form['indicator']['content_form_ahah_wrapper']['forms'] = array(
+
+    $form['indicator']['forms'] = array(
       '#type' => 'select',
-      '#title' => t('Select form'),
+      '#title' => t('Metadata Forms Available'),
       '#options' => $form_names,
-      '#description' => t('Select the form to populate the metadata of the new object.'),
+      '#description' => t("Choose a content model and metadata form, then click the 'Next' button to continue the ingest process."),
     );
+
+    $form['collection_pid'] = array(
+      '#type' => 'hidden',
+      '#value' => $collection_pid,
+    );
+
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#validate' => array('islandora_content_model_forms_get_ingest_form_validate'),
+      '#value' => t('Next'),
+    );    
   }
-
-  $form['collection_pid'] = array(
-    '#type' => 'hidden',
-    '#value' => $collection_pid,
-  );
-
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#validate' => array('islandora_content_model_forms_get_ingest_form_validate'),
-    '#value' => t('Next'),
-  );
+  else {
+    $model = key($form_names);
+    $form_state['values']['forms'] = key($form_names[$model]);
+    $form_state['values']['collection_pid'] = $collection_pid;
+  }
 
   return $form;
 }
@@ -135,24 +115,9 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
  */
 function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_pid, $collection_label) {
   drupal_set_title(t('Ingest form'));
-  $content_model_pid = $form_state['values']['models'];
-  $content_model_dsid = $content_model_pid; //@TODO: check what this should be
-
-  $form_name = NULL;
-  if (isset($form_state['values']['forms'])) {
-    $form_name = $form_state['values']['forms'];
-  }
-  else {
-    $form_names = islandora_content_model_get_form_names($content_model_pid);
-    reset($form_names);
-    $form_name = key($form_names);
-    $form_state['values']['forms'] = $form_name;
-  }
-
-  if (empty($form_name)) {
-    //@TODO: what should happen here
-  }
-  $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
+  
+  list($content_model, $form_name) = explode(' ', $form_state['values']['forms'], 2);
+  $dsid = islandora_content_model_get_dsid($content_model, $form_name);
 
   $xml = NULL;
   if (!empty($form_state['storage']['xml_data'])) {
@@ -164,25 +129,17 @@ function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_p
     '#type' => 'hidden',
     '#value' => $collection_pid,
   );
-  $form['content_model_pid'] = array(
+  $form['content_model'] = array(
     '#type' => 'hidden',
-    '#value' => $content_model_pid,
-  );
-  $form['content_model_dsid'] = array(
-    '#type' => 'hidden',
-    '#value' => $content_model_dsid,
+    '#value' => $content_model,
   );
   $form['dsid'] = array(
     '#type' => 'hidden',
     '#value' => $dsid,
   );
-  $form['models'] = array(
+  $form['form_name'] = array(
     '#type' => 'hidden',
-    '#value' => $form_state['values']['models'],
-  );
-  $form['forms'] = array(
-    '#type' => 'hidden',
-    '#value' => $form_state['values']['forms'],
+    '#value' => $form_name,
   );
 
   $form['#submit'] = array('islandora_content_model_forms_ingest_form_submit');
@@ -202,7 +159,6 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
     return;
   }
 
-  // Check for submission was here. Seems to be not needed now?
   switch ($form_state['storage']['step']) {
     case 1:
       $form_state['storage']['step']++;
@@ -278,10 +234,9 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   }
 
   $collection_pid = $form_state['values']['collection_pid'];
-  $content_model_pid = $form_state['values']['content_model_pid'];
-  $content_model_dsid = $form_state['values']['content_model_dsid'];
+  $content_model_pid = $form_state['values']['content_model'];
   $dsid = $form_state['values']['dsid'];
-  $form_name = $form_state['values']['forms'];
+  $form_name = $form_state['values']['form_name'];
   $should_redirect = TRUE;
 
   $relationship = NULL;
@@ -345,42 +300,20 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
 }
 
 /**
- * AJAX callback for step 1 form selection.
- *
- * @param $form
- * @param $form_state
- */
-function islandora_content_model_forms_update_form_choice($form, $form_state) {
-  return $form['indicator']['content_form_ahah_wrapper'];
-}
-
-/**
  * Get content models associated with a collection.
  *
  * @param $collection_pid
  * @param $form_state
  */
-function islandora_content_model_forms_get_potential_content_models($collection_object, $form_state = array()) {
+function islandora_content_model_forms_get_potential_content_models($collection_object) {
   module_load_include('inc', 'islandora', 'includes/islandora.ingest');
   $info = islandora_ingest_get_information($collection_object);
 
   $potential_models = array();
   if (isset($info['models']) && is_array($info['models'])) {
     foreach ($info['models'] AS $model) {
-      $potential_models[$model['pid']] = $model['name'];
-    }
-  }
-
-  if (isset($form_state['storage']['content_model']) && $content_models = $form_state['storage']['content_model']) {
-    $content_models = (array) $content_models;
-    foreach ($content_models as $content_model_pid) {
-      try {
-        $content_model = $collection_object->repository->getObject($content_model_pid);
-        $potential_models["$content_model_pid"] = $content_model->label;
-      }
-      catch (RepositoryException $e) {
-
-      }
+      $cm = islandora_object_load($model['pid']);
+      $potential_models[$model['pid']] = $cm ? $cm->label : $model['name'];
     }
   }
 
