@@ -344,10 +344,6 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
   $content_models = islandora_content_model_forms_get_content_model_names();
   $form_names = islandora_content_model_forms_get_form_names();
   $transforms = islandora_content_model_forms_get_transforms();
-  $transform_select = array();
-  foreach($transforms as $name => $path) {
-    $transform_select[$name] = $name;
-  }
 
   if (count($form_names) == 0) {
     drupal_set_message(t('No forms defined, both forms and content models must be defined to add new associations.'), 'error');
@@ -401,7 +397,7 @@ function islandora_content_model_forms_list_form($form, array &$form_state) {
       'transform' => array(
         '#type' => 'select',
         '#title' => t('XSL Transform'),
-        '#options' => $transform_select,
+        '#options' => array_combine($transforms, $transforms),
         '#default_value' => 'No Transform',
         '#description' => t('A xsl transform for setting the Fedora Object\'s Dublin Core metadata datastream.'),
       ),
@@ -588,7 +584,7 @@ function islandora_content_model_get_form_names($content_model, $ds = NULL) {
     $query->condition('dsid', $ds);
   }
   $result = $query->execute();
-  foreach ($result AS $data) {
+  foreach ($result as $data) {
     if ($data->content_model == $content_model && XMLFormRepository::Valid($data->form_name)) {
       $list[$data->form_name] = "{$data->form_name} ({$data->dsid})";
     }
