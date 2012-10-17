@@ -302,36 +302,38 @@ function islandora_content_model_forms_remove($id) {
  *
  * @param int $id
  */
-function islandora_content_model_forms_disable($id, $disable) {
-  $hook_forms = islandora_content_model_forms_get_hook_associations();
-  if(!isset($hook_forms[$id])) {
-    drupal_set_message(t('Specified association does not exist.'), 'error');
+function islandora_content_model_forms_disable($id = NULL, $disable = NULL) {
+  if (isset($id)) {
+    $hook_forms = islandora_content_model_forms_get_hook_associations();
+    if(!isset($hook_forms[$id])) {
+      drupal_set_message(t('Specified association does not exist.'), 'error');
+      drupal_goto('admin/islandora/model/forms');
+      return '';
+    }
+
+    if($hook_forms[$id]['in_db']) {
+      db_update('islandora_content_model_forms_association_hooks')
+        ->fields(array('enabled' => ($disable == 'true') ? 0 : 1))
+        ->condition('id', $id)
+        ->execute();
+    }
+    else {
+      db_insert('islandora_content_model_forms_association_hooks')
+        ->fields(array(
+          'id' => $id,
+          'enabled' => ($disable == 'true') ? 0 : 1,
+        ))
+        ->execute();
+    }
+
+    if($disable == 'true') {
+      drupal_set_message(t('Successfully disabled association.'));
+    }
+    else {
+      drupal_set_message(t('Successfully enabled association.'));
+    }
     drupal_goto('admin/islandora/model/forms');
-    return '';
   }
-
-  if($hook_forms[$id]['in_db']) {
-    db_update('islandora_content_model_forms_association_hooks')
-      ->fields(array('enabled' => ($disable == 'true') ? 0 : 1))
-      ->condition('id', $id)
-      ->execute();
-  }
-  else {
-    db_insert('islandora_content_model_forms_association_hooks')
-      ->fields(array(
-        'id' => $id,
-        'enabled' => ($disable == 'true') ? 0 : 1,
-      ))
-      ->execute();
-  }
-
-  if($disable == 'true') {
-    drupal_set_message(t('Successfully disabled association.'));
-  }
-  else {
-    drupal_set_message(t('Successfully enabled association.'));
-  }
-  drupal_goto('admin/islandora/model/forms');
 }
 
 /**
