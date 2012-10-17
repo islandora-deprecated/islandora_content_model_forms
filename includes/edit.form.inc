@@ -50,7 +50,7 @@ function islandora_content_model_forms_edit_page_1($pid, $ds_id, &$form_state) {
   }
   $form_names = array();
   $form_count = 0;
-  foreach ($content_models AS $model) {
+  foreach ($content_models as $model) {
     $forms = islandora_content_model_get_form_names($model, $ds_id);
     $cm_object = islandora_object_load($model);
     if($cm_object) {

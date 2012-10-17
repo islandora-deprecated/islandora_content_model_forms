@@ -47,7 +47,7 @@ function islandora_content_model_forms_menu() {
   $items['admin/islandora/model/forms/disable/%/%'] = array(
     'title' => 'Disable Form Association.',
     'description' => 'Disable associated form.',
-    'page callback' => 'islandora_content_model_forms_disable',
+    'page callback' => 'islandora_content_model_forms_disable_association',
     'page arguments' => array(5,6),
     'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
     'type' => MENU_CALLBACK,
@@ -302,7 +302,7 @@ function islandora_content_model_forms_remove($id) {
  *
  * @param int $id
  */
-function islandora_content_model_forms_disable($id, $disable) {
+function islandora_content_model_forms_disable_association($id, $disable) {
   $hook_forms = islandora_content_model_forms_get_hook_associations();
   if(!isset($hook_forms[$id])) {
     drupal_set_message(t('Specified association does not exist.'), 'error');
