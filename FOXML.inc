@@ -44,7 +44,7 @@ class FOXML extends DOMDocument {
    * @param <type> $collection_pid
    * @param <type> $relationship
    * @param <type> $ingest_file_location
-   * @param <type> $document 
+   * @param <type> $document
    */
   public function __construct($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_locations, $document, $transform, $state = 'A') {
     global $user;
@@ -189,8 +189,20 @@ class FOXML extends DOMDocument {
     return array($dtitle, $mime_type, $file_url);
   }
 
+  /**
+   * This function is for adding a POLICY (XACML)
+   * datastream to the FOXML.  It adds the collection's
+   * CHILD_POLICY but fires a drupal_alter to let other modules change it.
+   */
   private function createPolicy() {
     $policy_element = $this->getPolicyStreamElement();
+    // See if anything wants to change the policy before it is set.
+    drupal_alter('islandora_content_model_forms_policy',
+      $policy_element,
+      $this->pid,
+      $this->collectionPid,
+      $this->contentModelPid);
+
     if ($policy_element) {
       $datastream = $this->createDatastreamElement('POLICY', 'A', 'X');
       $version = $this->createDatastreamVersionElement('POLICY.0', 'POLICY', 'text/xml');
