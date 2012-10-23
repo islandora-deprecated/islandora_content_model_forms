@@ -88,7 +88,9 @@ class FOXML extends DOMDocument {
     $this->createIngestFileDatastreams();
     $this->createPolicy();
     $this->createDocumentDatastream();
-    $this->createDublinCoreDatastream();
+    if($this->dsid != 'DC') {
+       $this->createDublinCoreDatastream();
+    }   
     $this->createCollectionPolicy();
     $this->createWorkflowStream();
   }
@@ -367,7 +369,7 @@ class FOXML extends DOMDocument {
    */
   private function createDublinCoreDatastream() {
     $datastream = $this->createDatastreamElement('DC', 'A', 'X');
-    $version = $this->createDatastreamVersionElement('DC.0', 'Dublin Core Record', 'text/xml');
+    $version = $this->createDatastreamVersionElement('DC.0', 'DC Record', 'text/xml');
     $content = $this->createDatastreamContentElement();
     $dublin_core = $this->applyTransformation();
     if (isset($dublin_core)) {
