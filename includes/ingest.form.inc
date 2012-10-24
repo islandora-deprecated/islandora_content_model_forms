@@ -270,7 +270,7 @@ function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
   $ds->label = $dsid . ' Record';
   $object->ingestDatastream($ds);
 
-  if ($dsid != 'DC' && $tranform) {
+  if ($dsid != 'DC' && $transform) {
     $dc_ds = $object->constructDatastream('DC', 'X');
     $dc_ds->label = 'DC Record';
     $object->ingestDatastream($dc_ds);
