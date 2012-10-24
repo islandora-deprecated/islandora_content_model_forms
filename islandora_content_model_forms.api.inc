@@ -12,16 +12,18 @@
  * without disabling the module that creates them
  *
  * @return array
- *   This function should return an array of the form:
+ *   This function should return an associative array of associative arrays of
+ *   the form:
  *   @code
  *   return array(
  *     'unique_assoication_name' => array( # by convention this should start with your modules name
- *     'content_model' => 'islandora:sp_basic_image',
- *     'form_name' => 'Image DC Form',
- *     'dsid' => 'DC',
- *     'title_field' => "['dc:title']",
- *     'transform' => 'No Transform',
- *     'template' => FALSE,
+ *       'content_model' => 'islandora:sp_basic_image',
+ *       'form_name' => 'Image DC Form',
+ *       'dsid' => 'DC',
+ *       'title_field' => "['dc:title']",
+ *       'transform' => 'No Transform',
+ *       'template' => FALSE,
+ *     ),
  *   );
  *   @endcode
  */
