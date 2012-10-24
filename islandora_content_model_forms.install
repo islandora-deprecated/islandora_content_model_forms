@@ -80,3 +80,75 @@ function islandora_content_model_forms_schema() {
   );
   return $schema;
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add in the required table for handling for associations.
+ */
+function islandora_content_model_forms_update_7100() {
+  $name = 'islandora_content_model_forms_association_hooks';
+  $schema[$name] = array(
+    'description' => 'This table is used to store the status of associations defined by hooks.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The name of the hook.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not NULL' => TRUE,
+      ),
+      'enabled' => array(
+        'description' => 'If the hook is enabled.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not NULL' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  db_create_table($name, $schema[$name]);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Attempt to alter all transforms to use only filenames.
+ */
+function islandora_content_model_forms_update_7101() {
+  // Get all transforms from the DB.
+  $results = db_select('islandora_content_model_forms', 'transform')
+    ->fields('transform')
+    ->execute();
+
+  $transforms = array(
+    'No Transform' => 'dc_no_transform.xsl',
+  );
+  foreach ($results as $trans) {
+    $transform = $trans->transform;
+    
+    $base = basename($transform);
+    if (array_key_exists($base, $transforms)) {
+      // If there will be a collision using only the filename, inform the user and
+      //   proceed?
+    }
+    else {
+      $transforms[$base] = $transform;
+    }
+  }
+  
+  // Update all the transform entries to only use the filename.
+  foreach ($transforms as $name => $original) {
+    db_update('islandora_content_model_forms')
+      ->fields(array(
+        'transform' => $name,
+      ))
+      ->condition('transform', $original)
+      ->execute();
+  }
+
+  $t = get_t();
+
+  return $t('Altered transform paths.');
+}
+
