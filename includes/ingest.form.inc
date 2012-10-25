@@ -30,8 +30,8 @@ function islandora_content_model_forms_get_ingest_form($form, &$form_state, $col
 
   // If the form is set while fetching step 1, proceed to step 2 (case: one form).
   if (isset($form_state['values']['forms'])) {
-    $page = 2;
-    $form_state['storage']['step'] = 2;
+    $page = $form_state['storage']['step'] = 2;
+    list($form_state['storage']['content_model'], $form_state['storage']['form_name']) = explode(' ', $form_state['values']['forms'], 2);
   }
 
   if ($page == 2) {
