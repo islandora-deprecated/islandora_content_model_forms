@@ -15,8 +15,10 @@
  * @throws Exception
  */
 function islandora_content_model_forms_get_ingest_form($form, &$form_state, $collection_pid) {
-  module_load_include('module', 'islandora', 'islandora');
-  $page = $form_state['storage']['step'] = empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step'];
+  // Ensure we load ourself (for AJAX).
+  form_load_include($form_state, 'form.inc', 'islandora_content_model_forms', 'includes/ingest');
+
+  $page = $form_state['storage']['step'] = (empty($form_state['storage']['step']) ? 1 : $form_state['storage']['step']);
   $collection_object = islandora_object_load($collection_pid);
   $collection_label = $collection_object->label;
 
@@ -87,13 +89,12 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
     );
 
     $form['collection_pid'] = array(
-      '#type' => 'hidden',
+      '#type' => 'value',
       '#value' => $collection_pid,
     );
 
     $form['submit'] = array(
       '#type' => 'submit',
-      '#validate' => array('islandora_content_model_forms_get_ingest_form_validate'),
       '#value' => t('Next'),
     );    
   }
@@ -115,8 +116,9 @@ function islandora_content_model_forms_ingest_page_1(&$form_state, $collection_p
  */
 function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_pid, $collection_label) {
   drupal_set_title(t('Ingest form'));
-  
-  list($content_model, $form_name) = explode(' ', $form_state['values']['forms'], 2);
+
+  $content_model = $form_state['storage']['content_model'];
+  $form_name = $form_state['storage']['form_name'];
   $dsid = islandora_content_model_get_dsid($content_model, $form_name);
 
   $xml = NULL;
@@ -126,23 +128,23 @@ function islandora_content_model_forms_ingest_page_2(&$form_state, $collection_p
 
   $form = xml_form_builder_get_form($form_state, $form_name, $xml);
   $form['collection_pid'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $collection_pid,
   );
   $form['content_model'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $content_model,
   );
   $form['dsid'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $dsid,
   );
   $form['form_name'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $form_name,
   );
 
-  $form['#submit'] = array('islandora_content_model_forms_ingest_form_submit');
+  $form['#submit'] = array('islandora_content_model_forms_get_ingest_form_submit');
   $form['#validate'] = array('islandora_content_model_forms_get_ingest_form_validate');
   return $form;
 }
@@ -161,14 +163,13 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
 
   switch ($form_state['storage']['step']) {
     case 1:
+      list($form_state['storage']['content_model'], $form_state['storage']['form_name']) = explode(' ', $form_state['values']['forms'], 2);
       $form_state['storage']['step']++;
       $form_state['rebuild'] = TRUE;
       break;
-
     case 2:
       // XML based form.
       if ($form_state['storage']['xml']) {
-        module_load_include('inc', 'xml_form_api', 'XMLForm');
         $xml_form = new XMLForm($form_state);
         $xml_form->validate($form, $form_state);
       }
@@ -184,15 +185,15 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
       */
 
       if (!empty($_FILES['files']['name']['ingest-file-location'])) {
-        $file_object = file_save_upload('ingest-file-location', array('file_validate_extensions' => $arr));
+      $file_object = file_save_upload('ingest-file-location', array('file_validate_extensions' => $arr));
 
-        if ($file_object) {
-          $form_state['values']['ingest-file-location'] = $file_object->uri;
-          $form_state['values']['ingest-file-location-id'] = $file_object->fid;
-        }
+      if ($file_object) {
+        $form_state['values']['ingest-file-location'] = $file_object->uri;
+        $form_state['values']['ingest-file-location-id'] = $file_object->fid;
       }
-      $form_state['rebuild'] = FALSE;
-      break;
+    }
+    $form_state['rebuild'] = FALSE;
+    break;
   }
 }
 
@@ -202,14 +203,13 @@ function islandora_content_model_forms_get_ingest_form_validate($form, &$form_st
  * @param $form
  * @param $form_state
  */
-function islandora_content_model_forms_ingest_form_submit($form, &$form_state) {
+function islandora_content_model_forms_get_ingest_form_submit($form, &$form_state) {
   // Only submit the form if the submit button was pressed (other buttons may be used for AJAX)
   if (!$form_state['submitted']) {
     return;
   }
 
-  module_load_include('inc', 'xml_form_api', 'XMLForm');
-  module_load_include('inc', 'islandora', 'includes/islandora.ingest');
+  form_load_include($form_state, 'inc', 'islandora', 'includes/islandora.ingest');
   global $base_url, $user;
 
   if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['type']['file_upload'] == 'text/xml') {
