@@ -249,7 +249,16 @@ function islandora_content_model_forms_get_ingest_form_submit($form, &$form_stat
 
   $content_models = array(array('pid' => $content_model_pid));
 
-  $object = islandora_ingest_get_object($content_models, $collection_pid, $collection_policy_info['relationship'], 'islandora');
+  // TODO:  We probably want to change to default namespace to something other
+  //   than 'islandora'...  The question is what...  Or do we make it
+  //   configuration (possibly in the collection policy, without the
+  //   association to a content model)?
+  $namespace = 'islandora';
+  if (!empty($collection_policy_info['models'][$content_model_pid]['namespace'])) {
+    $namespace = $collection_policy_info['models'][$content_model_pid]['namespace'];
+  }
+
+  $object = islandora_ingest_get_object($content_models, $collection_pid, $collection_policy_info['relationship'], $namespace);
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
   $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
   eval('$label = $form_state[\'values\']' . $label_field . ';');
