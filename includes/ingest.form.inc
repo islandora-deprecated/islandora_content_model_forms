@@ -257,6 +257,8 @@ function islandora_content_model_forms_get_ingest_form_submit($form, &$form_stat
   if (!empty($collection_policy_info['models'][$content_model_pid]['namespace'])) {
     $namespace = $collection_policy_info['models'][$content_model_pid]['namespace'];
   }
+  $exploded = explode(':', $namespace);
+  $namespace = $exploded[0];
 
   $object = islandora_ingest_get_object($content_models, $collection_pid, $collection_policy_info['relationship'], $namespace);
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
