@@ -113,8 +113,8 @@ function islandora_content_model_forms_admin_paths() {
 function islandora_content_model_forms_permission() {
   return array(
     PERM_ADMIN_FORM_ASSOCIATION => array(
-      'title' => t(PERM_ADMIN_FORM_ASSOCIATION),
-      'description' => t('Associate XML Forms and XSLT with Islandora content models and datastreams.'),
+      'title' => t('Administer Form Associations'),
+      'description' => t('Associate XML forms and XSLTs with Islandora content models and datastreams.'),
     ),
   );
 }
