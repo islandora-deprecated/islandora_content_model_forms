@@ -90,7 +90,7 @@ class FOXML extends DOMDocument {
     $this->createDocumentDatastream();
     if($this->dsid != 'DC') {
        $this->createDublinCoreDatastream();
-    }   
+    }
     $this->createCollectionPolicy();
     $this->createWorkflowStream();
   }
@@ -101,7 +101,6 @@ class FOXML extends DOMDocument {
    * @return DOMElement
    */
   private function createObjectProperties() {
-    global $user;
     $object_properties = $this->createElementNS(self::foxml, 'foxml:objectProperties');
     $this->root->appendChild($object_properties);
 
@@ -121,8 +120,17 @@ class FOXML extends DOMDocument {
 
     $property = $this->createElementNS(self::foxml, 'foxml:property');
     $property->setAttribute('NAME', 'info:fedora/fedora-system:def/model#ownerId');
-    $property->setAttribute('VALUE', $user->name);
+    // Set the ownerId to the username or anonymous as in core.
+    if (user_is_logged_in()) {
+      global $user;
+      $owner = $user->name;
+    }
+    else {
+      $owner = 'anonymous';
+    }
+    $property->setAttribute('VALUE', $owner);
     $object_properties->appendChild($property);
+
     return $object_properties;
   }
 
