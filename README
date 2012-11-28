@@ -1,1 +1,1 @@
-Defines associations between XML forms and content models.
+This module has been deprecated in drupal 7 and its functionality has been folded into islandora_xml_forms.
