@@ -1,8 +1,0 @@
-name = Islandora Content Model Forms
-description = Defines associations between XML Forms and Content Models.
-dependencies[] = islandora
-dependencies[] = xml_forms
-package = Islandora Dependencies
-version = 7.x-dev
-core = 7.x
-
