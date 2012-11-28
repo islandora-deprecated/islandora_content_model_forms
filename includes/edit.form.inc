@@ -188,7 +188,7 @@ function islandora_content_model_forms_edit_form_submit($form, &$form_state) {
   $xml_ds->setContentFromString($document->saveXML());
 
   $transform = islandora_content_model_get_transform($content_model_pid, $form_name);
-  if($tranform) {
+  if($transform) {
     $dc_doc = islandora_content_model_forms_transform_document($transform, $document, $object);
     $dc_ds = $object['DC'];
     $dc_ds->setContentFromString($dc_doc->saveXML());
