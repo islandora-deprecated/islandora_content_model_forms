@@ -62,7 +62,7 @@ function islandora_content_model_forms_menu() {
   // ahah callback to update ingest form
   $items['islandora/form/update'] = array(
     'page callback' => 'islandora_content_model_update_form_choice',
-    'access arguments' => array(PERM_ADMIN_FORM_ASSOCIATION), // Use something fedora specific.
+    'access arguments' => array('ingest new fedora objects'), // Use fedora_repository ingest perm string
     'file' => 'IngestObjectMetadataForm.inc',
     'type' => MENU_CALLBACK,
   );
@@ -367,7 +367,12 @@ function islandora_content_model_forms_autocomplete($string) {
     }
   }
   $output[$string] = $string;
-  return drupal_json($output);
+  // We forego the usuage of drupal_json as this sets a header which causes
+  // IE to prompt for downloads. Instead we use the header set in 
+  // _drupal_bootstrup_full which sets the Content Type of 'text/html'.
+  // Relevant threads: http://drupal.org/node/952220, 
+  // http://drupal.org/node/1086098
+  echo drupal_to_js($output);
 }
 
 /**
@@ -394,7 +399,12 @@ function islandora_content_model_get_form_names($content_model) {
  */
 function islandora_content_model_get_form_names_ahah($content_model) {
   $list = islandora_content_model_get_form_names($content_model);
-  return drupal_json($list);
+  // We forego the usuage of drupal_json as this sets a header which causes
+  // IE to prompt for downloads. Instead we use the header set in 
+  // _drupal_bootstrup_full which sets the Content Type of 'text/html'.
+  // Relevant threads: http://drupal.org/node/952220, 
+  // http://drupal.org/node/1086098
+  echo drupal_to_js($list);
 }
 
 /**
@@ -564,9 +574,15 @@ function islandora_content_model_forms_ahah() {
   $javascript = drupal_add_js(NULL, NULL, 'header');
   $settings = call_user_func_array('array_merge_recursive', $javascript['setting']);
   unset($settings['ahah']['']);
-  drupal_json(array(
+  // We forego the usuage of drupal_json as this sets a header which causes
+  // IE to prompt for downloads. Instead we use the header set in 
+  // _drupal_bootstrup_full which sets the Content Type of 'text/html'
+  // Relevant threads: http://drupal.org/node/952220, 
+  // http://drupal.org/node/1086098
+  $response = array(
     'status' => TRUE,
     'data' => $data,
     'settings' => $settings,
-  ));
+  );
+  echo drupal_to_js($response);
 }

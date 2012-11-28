@@ -25,7 +25,7 @@ class IngestObjectMetadataForm {
    */
   public function getPotentialContentModels($collection_pid, array &$form_state) {
     $potential_models = array();
-    
+
     //Add models from collection policy.
     if (($collection_policy = CollectionPolicy::loadFromCollection($collection_pid)) !== FALSE && ($content_models = $collection_policy->getContentModels())) {
       $potential_models = array();
@@ -36,9 +36,9 @@ class IngestObjectMetadataForm {
       }
     }
 
-    //Add cmodels to programatically include...
+    // Add cmodels to programatically include...
     if ($CMs = $form_state['storage']['content_model']) {
-      $CMs = (array)$CMs;
+      $CMs = (array) $CMs;
       module_load_include('inc', 'fedora_repository', 'ContentModel');
       foreach ($CMs as $content_model) {
         $content_model = ContentModel::loadFromModel($content_model);
@@ -47,12 +47,17 @@ class IngestObjectMetadataForm {
         $potential_models["$identifier"] = "$name";
       }
     }
-    
+
     return $potential_models;
   }
 
   /**
    * Create the first page of the Ingest Object Metadata form.
+   *
+   * @note
+   *   this code contains a temporary fix and should be replaced as soon as a more permananent solution is developed
+   * currently if a collection has more than one content model listed in the collection policy the user
+   * will only have access to the first form associated with the content type.
    *
    * @param string $collection_pid
    * @param string $collection_label
@@ -60,13 +65,8 @@ class IngestObjectMetadataForm {
    *
    * @return array
    */
-  // this code contains a temporary fix and should be replaced as soon as a more permananent solution is developed
-  // currently if a collection has more than one content model listed in the collection policy the user
-  // will only have access to the first form associated with the content type.
-
-
   public function createPageOne($collection_pid, $collection_label, array &$form_state) {
-    //ddebug_backtrace();
+
     $potential_models = $this->getPotentialContentModels($collection_pid, $form_state);
     unset($potential_models['islandora:collectionCModel/ISLANDORACM']);
     list($identifier, $name) = array_peek($potential_models);
@@ -76,30 +76,33 @@ class IngestObjectMetadataForm {
     $form_names = islandora_content_model_get_form_names($content_model_pid);
 
     $form = array();
-    
+
     if (count($potential_models) == 0) {
       if (!user_access('manage collections')) {
         $message = t('This collection cannot receive additions.  Please contact the site administrator if you believe this message to be in error.');
       }
       else {
         if (module_exists('islandora_collection_manager')) {
-          $message = t('Select the %manage tab to add content models or child collections to this collection', array('%manage' => 'Manage This Collection')); //XXX: Should get the value from the collection manager?
+          // XXX: Should get the value from the collection manager?
+          $message = t('Select the %manage tab to add content models or child collections to this collection', array('%manage' => 'Manage This Collection'));
         }
         else {
           $collection_link = l("Islandora Collection Manager", "https://wiki.duraspace.org/display/ISLANDORA6121/Collection+Manager");
           $message = t('This collection requires either one or more content models in its COLLECTION_POLICY, or one or more child collections.<br />
                       We strongly recommend enabling the !collection_link module for managing collection objects.', array('!collection_link' => $collection_link));
         }
-        $form['message'] = array(
-          '#type' => 'item',
-          '#value' => $message,
-        );
-        return $form;
       }
+      $form['message'] = array(
+        '#type' => 'item',
+        '#value' => $message,
+      );
+      return $form;
     }
-    
+
     $form['indicator'] = array(
       '#type' => 'fieldset',
+      '#attributes' => array('class' => 'fedora_ingester'),
+      '#id' => 'fedora_ingest_fieldset',
       '#title' => t('Ingest digital object into %collection_label (@collection_pid), Step #1:', array('@collection_pid' => $collection_pid, '%collection_label' => $collection_label)),
     );
 
@@ -136,7 +139,7 @@ class IngestObjectMetadataForm {
         '#description' => t('Select the form to populate the metadata of the new object.'),
       );
     }
-    
+
     $form['collection_pid'] = array(
       '#type' => 'hidden',
       '#value' => $collection_pid
@@ -181,12 +184,12 @@ class IngestObjectMetadataForm {
       return $ingestForm->createQDCIngestForm($collection_pid, $collection_label, $form_state);
     }
     $dsid = islandora_content_model_get_dsid($content_model_pid, $form_state['values']['forms']);
-    
+
     $xml = NULL;
     if (!empty($form_state['storage']['xml_data'])) {
       $xml = $form_state['storage']['xml_data'];
     }
-    
+
     $form = xml_form_builder_get_form($form_state, $form_name, $xml);
     $form['collection_pid'] = array(
       '#type' => 'hidden',
@@ -211,6 +214,11 @@ class IngestObjectMetadataForm {
     $form['forms'] = array(
       '#type' => 'hidden',
       '#value' => $form_state['values']['forms']
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#attributes' => array('class' => 'fedora_ingest_page_two_submit'),
+      '#value' => t('Submit'),
     );
 
     return $form;
@@ -277,42 +285,44 @@ class IngestObjectMetadataForm {
     $dsid = $form_state['values']['dsid'];
     $form_name = $form_state['values']['forms'];
     $should_redirect = TRUE;
-    
+
     $relationship = NULL;
     $pid = NULL;
-    
+
     @$collection_policy = CollectionPolicy::loadFromCollection($collection_pid);
     if ($collection_policy !== FALSE) { //Collection policy exists; use it!
       $relationship = $collection_policy->getRelationship();
       $pid = $collection_policy->getNextPid($content_model_dsid, $content_model_pid);
     }
-    
+
     if (empty($pid)) { //No PID yet, try to get it some other way...
       if (!empty($form_state['storage']['pid_namespace'])) {
         module_load_include('inc', 'fedora_repository', 'api/fedora_item');
         $pid = Fedora_Item::get_next_PID_in_namespace($form_state['storage']['pid_namespace']);
       }
     }
-    
+
     if (empty($relationship)) {
       if (!empty($form_state['storage']['parent_relation'])) {
         $relationship = $form_state['storage']['parent_relation'];
       }
     }
-      
+
     if (!empty($relationship) && !empty($pid)) {
       module_load_include('inc', 'islandora_content_model_forms', 'FOXML');
       $label_field = islandora_content_model_get_title_field($content_model_pid, $form_name);
       eval('$label = $form_state[\'values\']' . $label_field . ';'); //FIXME:  This doesn't really work in many cases (building the title from multiple fields, as for a person's last and first name fields.  Also:
       //FIXME:  'eval' is terrible... Get rid of it!
-      
+      if(empty($label)) {
+        $label = "Undefined";
+      }
       if (empty($form['#post']['active-toggle'])) {
         $state = 'A';
       }
       else {
         $state = $form['#post']['active-toggle'] ? 'A' : 'I';
       }
-      
+
       $form_state['values']['pid'] = $pid;
       // added ne functionality to static thumbnails to objects if values are provided in forms
       $module = isset($form_state['values']['module']) ? $form_state['values']['module'] : NULL;
