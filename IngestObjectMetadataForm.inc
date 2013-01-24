@@ -217,7 +217,6 @@ class IngestObjectMetadataForm {
     $form['submit'] = array(
       '#type' => 'submit',
       '#attributes' => array('class' => 'fedora_ingest_page_two_submit'),
-      '#submit' => array('fedora_repository_ingest_form_submit'),
       '#value' => t('Submit'),
     );
 
@@ -258,6 +257,9 @@ class IngestObjectMetadataForm {
    */
   public function submit(array &$form, array &$form_state) {
     global $base_url;
+    if ($form_state['clicked_button']['#id'] != 'edit-submit') {
+      return;
+    }
     if (isset($_FILES['files']['name']['file_upload']) && $_FILES['files']['name']['file_upload'] == 'text/xml') {
       $tmpDir = file_directory_path();
       if (!$file = file_save_upload('file_upload', NULL, $tmpDir)) {
@@ -301,6 +303,8 @@ class IngestObjectMetadataForm {
         $pid = Fedora_Item::get_next_PID_in_namespace($form_state['storage']['pid_namespace']);
       }
     }
+
+
 
     if (empty($relationship)) {
       if (!empty($form_state['storage']['parent_relation'])) {

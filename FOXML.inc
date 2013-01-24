@@ -385,6 +385,7 @@ class FOXML extends DOMDocument {
         $results->item(0)->nodeValue = $this->label;
         // Set the Pid
         $results = $xpath->query("*[local-name()='identifier']");
+        $length = $results->length;
         $results->item(0)->nodeValue = $this->pid;
         if (isset($document->documentElement)) {
           return $this->importNode($document->documentElement, TRUE);
