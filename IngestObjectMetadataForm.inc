@@ -304,7 +304,13 @@ class IngestObjectMetadataForm {
         $pid = Fedora_Item::get_next_PID_in_namespace($form_state['storage']['pid_namespace']);
       }
     }
-
+    $mods_nodelist = $document->getElementsByTagName('mods');
+    if ($mods_nodelist->length > 0) {
+      $mods_element = $mods_nodelist->item(0);
+      $identifier_element = $document->createElement('identifier', $pid);
+      $identifier_element->setAttribute('type', 'local');
+      $mods_element->appendChild($identifier_element);
+    }
 
 
     if (empty($relationship)) {
