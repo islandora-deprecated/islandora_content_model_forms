@@ -114,6 +114,15 @@ class EditObjectMetadataForm {
       '#type' => 'hidden',
       '#value' => isset($form_state['values']['dsid']) ? $form_state['values']['dsid'] : $dsid,
     );
+
+    $elements = element_children($form);
+    foreach ($elements as $element) {
+      if ($form[$element]['#type'] == 'file') {
+        $form[$element] = null;
+      }
+    }
+
+
     return $form;
   }
 
@@ -256,7 +265,7 @@ class EditObjectMetadataForm {
   private function isDatastreamManaged($pid, $dsid) {
     $fedora_item = new Fedora_Item($pid);
     $datastream = $fedora_item->get_datastream($dsid);
-    if($datastream) {
+    if ($datastream) {
       return $datastream->controlGroup == 'M';
     }
     else {
