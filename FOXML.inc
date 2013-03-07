@@ -44,7 +44,7 @@ class FOXML extends DOMDocument {
    * @param <type> $collection_pid
    * @param <type> $relationship
    * @param <type> $ingest_file_location
-   * @param <type> $document 
+   * @param <type> $document
    */
   public function __construct($label, $pid, $dsid, $content_model_pid, $collection_pid, $relationship, $ingest_file_locations, $document, $transform, $state = 'A') {
     global $user;
@@ -88,7 +88,9 @@ class FOXML extends DOMDocument {
     $this->createIngestFileDatastreams();
     $this->createPolicy();
     $this->createDocumentDatastream();
-    $this->createDublinCoreDatastream();
+    if($this->dsid != 'DC') {
+       $this->createDublinCoreDatastream();
+    }
     $this->createCollectionPolicy();
     $this->createWorkflowStream();
   }
@@ -99,7 +101,6 @@ class FOXML extends DOMDocument {
    * @return DOMElement
    */
   private function createObjectProperties() {
-    global $user;
     $object_properties = $this->createElementNS(self::foxml, 'foxml:objectProperties');
     $this->root->appendChild($object_properties);
 
@@ -119,8 +120,17 @@ class FOXML extends DOMDocument {
 
     $property = $this->createElementNS(self::foxml, 'foxml:property');
     $property->setAttribute('NAME', 'info:fedora/fedora-system:def/model#ownerId');
-    $property->setAttribute('VALUE', $user->name);
+    // Set the ownerId to the username or anonymous as in core.
+    if (user_is_logged_in()) {
+      global $user;
+      $owner = $user->name;
+    }
+    else {
+      $owner = 'anonymous';
+    }
+    $property->setAttribute('VALUE', $owner);
     $object_properties->appendChild($property);
+
     return $object_properties;
   }
 
@@ -189,8 +199,20 @@ class FOXML extends DOMDocument {
     return array($dtitle, $mime_type, $file_url);
   }
 
+  /**
+   * This function is for adding a POLICY (XACML)
+   * datastream to the FOXML.  It adds the collection's
+   * CHILD_POLICY but fires a drupal_alter to let other modules change it.
+   */
   private function createPolicy() {
     $policy_element = $this->getPolicyStreamElement();
+    // See if anything wants to change the policy before it is set.
+    drupal_alter('islandora_content_model_forms_policy',
+      $policy_element,
+      $this->pid,
+      $this->collectionPid,
+      $this->contentModelPid);
+
     if ($policy_element) {
       $datastream = $this->createDatastreamElement('POLICY', 'A', 'X');
       $version = $this->createDatastreamVersionElement('POLICY.0', 'POLICY', 'text/xml');
@@ -355,7 +377,7 @@ class FOXML extends DOMDocument {
    */
   private function createDublinCoreDatastream() {
     $datastream = $this->createDatastreamElement('DC', 'A', 'X');
-    $version = $this->createDatastreamVersionElement('DC.0', 'Dublin Core Record', 'text/xml');
+    $version = $this->createDatastreamVersionElement('DC.0', 'DC Record', 'text/xml');
     $content = $this->createDatastreamContentElement();
     $dublin_core = $this->applyTransformation();
     if (isset($dublin_core)) {
