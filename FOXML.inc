@@ -196,6 +196,7 @@ class FOXML extends DOMDocument {
     $dtitle = substr($file_url, $beginIndex + 1);
     $dtitle = urldecode($dtitle);
     $dtitle = fix_dsid($dtitle);
+    $file_url = str_ireplace('https://', 'http://', $file_url);
     return array($dtitle, $mime_type, $file_url);
   }
 
