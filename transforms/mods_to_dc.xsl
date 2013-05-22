@@ -372,6 +372,10 @@ Version 1.0	2007-05-04 Tracy Meehleib <tmee@loc.gov>
 				<xsl:value-of select="mods:namePart[@type='date']"/>
 				<xsl:text/>
 			</xsl:if>
+			<xsl:if test="mods:namePart[@type='termsOfAddress']">
+				<xsl:text>, </xsl:text>
+				<xsl:value-of select="mods:namePart[@type='termsOfAddress']"/>
+			</xsl:if>
 			<xsl:if test="mods:displayForm">
 				<xsl:text> (</xsl:text>
 				<xsl:value-of select="mods:displayForm"/>
